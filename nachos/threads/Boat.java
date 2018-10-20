@@ -7,13 +7,17 @@ import java.util.Vector;
 public class Boat
 {
 	static BoatGrader bg;
-	static int cOnOahu;
-	static int aOnOahu;
-	static int cOnMolokai;
-	static int aOnMolokai;
 	static boolean boatOnOahu;
-	static Vector<KThread> aThreads;
-	static Vector<KThread> cThreads;
+	static int cKnownOnOahu;
+	static int cKnownOnMolokai;
+	static int aKnownOnOahu;
+	static Lock l;
+	static Condition2 cWaitingInBoat;
+	static Vector<KThread> waiting;
+	static Condition2 cWaitingOnOahu;
+	static Condition2 cWaitingOnMolokai;
+	static Condition2 aWaiting;
+	
 
 	public static void selfTest()
 	{
@@ -36,18 +40,19 @@ public class Boat
 		bg = b;
 
 		// Instantiate global variables here
-		cOnOahu = children;
-		aOnOahu = adults;
-		cOnMolokai = 0;
-		aOnMolokai = 0;
 		//assume the boat starts on Oahu
 		boatOnOahu = true;
+		l = new Lock();
+		cWaitingInBoat = new Condition2(l);
+		waiting = new Vector<KThread>();
+		cKnownOnMolokai = 0;
+		cKnownOnOahu = children;
+		aKnownOnOahu = adults;
 
 
 		// Create threads here. See section 3.4 of the Nachos for Java
 		// Walkthrough linked from the projects page.
 
-		aThreads = new Vector<KThread>();
 		Runnable a = new Runnable(){
 			public void run(){
 				adultItinerary();
@@ -55,9 +60,11 @@ public class Boat
 		};
 		for (int i = adults; i > 0; i--){
 				KThread temp = new KThread(a);
-				aThreads.add(temp);
+				temp.setName("Adult on Oahu");
+				aKnownOnOahu++;
+				temp.fork();
 		}
-		cThreads = new Vector<KThread>();
+
 		Runnable c = new Runnable(){
 			public void run(){
 				childItinerary();
@@ -65,10 +72,11 @@ public class Boat
 		};
 		for (int i = children; i > 0; i--){
 			KThread temp = new KThread(c);
-			cThreads.add(temp);
+			temp.setName("Child on Oahu");
+			cKnownOnOahu++;
+			temp.fork();
 		}
 		
-		aRun();
 		
 		/* Runnable r = new Runnable() {
 				public void run() {
@@ -81,97 +89,118 @@ public class Boat
 		// t.fork();
 
 	}
-	static void aRun(){
-		for(KThread i:aThreads){
-			i.fork();
-		}
-		cRun();
-	}
-	static void cRun(){
-		for(KThread i:cThreads){
-			i.fork();
-			/*deliberate pseudo-infinite loop to keep iterating child threads until the simulation ends internally*/
-			if(i == cThreads.lastElement()){
-				i = cThreads.firstElement();
-			}
-		}
-		//terminate if there are no child threads
-		Machine.terminate();
-	}
 
 
 	static void adultItinerary()
 	{
 		/* This is where you should put your solutions. Make calls to the BoatGrader to show that it is synchronized. For example: bg.AdultRowToMolokai(); indicates that an adult has rowed the boat across to Molokai
 		*/
-		if(!boatOnOahu){
-			//if the boat is on Molokai without any children to row it back, end simulation
-			if(cOnMolokai == 0){
-				Machine.terminate();
+		l.acquire();
+		while (!isDone()) {
+			if(!boatOnOahu){
+				//if the boat is on Molokai without any children to row it back, end simulation
+				if(cKnownOnMolokai == 0){
+					Machine.terminate();
+				}
+				else{
+					cWaitingOnMolokai.wake();
+					aWaiting.sleep();
+				}
 			}
 			else{
-				cRun();
+				//1 adult rows to Molokai(aOnMolokai++, aOnOahu--)
+				bg.AdultRowToMolokai();
+				boatOnOahu = false;
+				KThread.currentThread().setName("Adult On Molokai");
+				aKnownOnOahu--;
+				cWaitingOnMolokai.wake();
+				//In this implementation, once an adult is across, they no longer act
+				//Kill that thread
+				KThread.finish();
 			}
 		}
-		else if(aOnOahu == 0){
-			cRun();
-		}
-		else{
-			//1 adult rows to Molokai(aOnMolokai++, aOnOahu--)
-			aOnMolokai++;
-			aOnOahu--;
-			bg.AdultRowToMolokai();
-			boatOnOahu = false;
-			//In this implementation, once an adult is across, they no longer act
-			//Kill that thread
-			KThread.finish();
-		}
+		l.release();
 	}
 
 	static void childItinerary()
 	{
-		if(!boatOnOahu){
-			if(cOnMolokai > 0){
-				//1 child rows to Oahu (cOnOahu++, cOnMolokai--)
-				cOnOahu++;
-				cOnMolokai--;
-				bg.ChildRowToOahu();
-				boatOnOahu = true;
+		l.acquire();
+		while (!isDone()) {
+			if(!boatOnOahu){
+				if(KThread.currentThread().getName().equals("Child On Molokai")){
+					//row to Oahu (cKnownOnOahu++, cKnownOnMolokai--)
+					bg.ChildRowToOahu();
+					cKnownOnOahu++;
+					cKnownOnMolokai--;
+					KThread.currentThread().setName("Child On Oahu");
+					boatOnOahu = true;
+					aWaiting.wake();
+					cWaitingOnOahu.wake();
+					cWaitingOnOahu.sleep();
+				}
+				else {
+					//wake up a child on Molokai
+					cWaitingOnMolokai.wake();
+					cWaitingOnOahu.sleep();
+				}
 			}
-			else{
-				Machine.terminate();
+			else if (KThread.currentThread().getName().equals("Child On Molokai")) {
+				//if this child isn't on Oahu, wake up one that is
+				cWaitingOnOahu.wake();
+				cWaitingOnMolokai.sleep();
+			}
+			else if(cKnownOnOahu == 1){
+				//if only one child is left on Oahu, send all the adults over first
+				if(aKnownOnOahu > 0){
+					aWaiting.wake();
+					cWaitingOnOahu.sleep();
+				}
+				else{
+					//row to Molokai, end simulation
+					KThread.currentThread().setName("Child On Molokai");
+					bg.ChildRowToMolokai();
+					cKnownOnMolokai++;
+					cKnownOnOahu--;
+					boatOnOahu = false;
+					Machine.terminate();
+				}
+			}
+			else if (cKnownOnOahu >= 2 && aKnownOnOahu == 0){
+				if(waiting.size() == 0) {
+					//if the boat is empty, get on boat, wait
+					waiting.add(KThread.currentThread());
+					KThread.currentThread().setName("Child In Boat");
+					bg.ChildRowToMolokai();
+					cWaitingOnOahu.wake();
+					cWaitingInBoat.sleep();
+				}
+				else {
+					//if boat has 1 child in it, get in boat and leave
+					waiting.add(KThread.currentThread());
+					KThread.currentThread().setName("Child In Boat");
+					cKnownOnOahu -=2;
+					cKnownOnMolokai +=2;
+					bg.ChildRideToMolokai();
+					waiting.remove(KThread.currentThread());
+					KThread.currentThread().setName("Child On Molokai");
+					waiting.firstElement().setName("Child On Molokai");
+					waiting.remove(waiting.firstElement());
+					cWaitingInBoat.wake();
+					cWaitingOnMolokai.wake();
+					aWaiting.wake();
+					cWaitingOnMolokai.sleep();
+					boatOnOahu = false;
+				}
 			}
 		}
-		else if(cOnOahu == 1){
-			if(aOnOahu > 0){
-				aRun();
-			}
-			else{
-				//1 child rows to Molokai(cOnMolokai++, cOnOahu--)
-				cOnMolokai++;
-				cOnOahu--;
-				bg.ChildRowToMolokai();
-				boatOnOahu = false;
-				Machine.terminate();
-			}
-		}
-		else if (cOnOahu ==2 && aOnOahu == 0){
-			//2 children row to Molokai(cOnMolokai+=2, cOnOahu-=2)
-			cOnMolokai+=2;
-			cOnOahu-=2;
-			bg.ChildRowToMolokai();
-			bg.ChildRideToMolokai();
-			boatOnOahu = false;
+		l.release();
+	}
+	
+	static boolean isDone() {
+		if(aKnownOnOahu == 0 && cKnownOnOahu == 0) {
 			Machine.terminate();
 		}
-		else{
-			//2 children row to Molokai(cOnMolokai+=2, cOnOahu-=2)
-			cOnMolokai+=2;
-			cOnOahu-=2;
-			bg.ChildRowToMolokai();
-			bg.ChildRideToMolokai();
-			boatOnOahu = false;
-		}
+		return false;
 	}
 
 

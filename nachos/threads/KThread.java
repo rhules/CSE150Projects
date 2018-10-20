@@ -277,8 +277,8 @@ public class KThread {
 
 		Lib.assertTrue(this != currentThread);
 		/* KThread* curr = currentThread;
-	while (curr == currentThread){}
-	return;
+		while (curr == currentThread){}
+		return;
 
 		 */
 	}
