@@ -1,9 +1,19 @@
 package nachos.threads;
 import nachos.ag.BoatGrader;
+import nachos.machine.Machine;
+
+import java.util.Vector;
 
 public class Boat
 {
 	static BoatGrader bg;
+	static int cOnOahu;
+	static int aOnOahu;
+	static int cOnMolokai;
+	static int aOnMolokai;
+	static boolean boatOnOahu;
+	static Vector<KThread> aThreads;
+	static Vector<KThread> cThreads;
 
 	public static void selfTest()
 	{
@@ -26,35 +36,35 @@ public class Boat
 		bg = b;
 
 		// Instantiate global variables here
-		Int cOnOahu = children;
-		Int aOnOahu = adults;
-		Int cOnMolokai = 0;
-		Int aOnMolokai = 0;
+		cOnOahu = children;
+		aOnOahu = adults;
+		cOnMolokai = 0;
+		aOnMolokai = 0;
 		//assume the boat starts on Oahu
-		Bool boatOnOahu = true;
+		boatOnOahu = true;
 
 
 		// Create threads here. See section 3.4 of the Nachos for Java
 		// Walkthrough linked from the projects page.
 
-		vector<KThread> AThreads = new vector<KThread>;
+		aThreads = new Vector<KThread>();
 		Runnable a = new Runnable(){
-			Public void run(){
-				AdultItinerary();
+			public void run(){
+				adultItinerary();
 			}
 		};
 		for (int i = adults; i > 0; i--){
-				KThread temp = new KThread(r);
+				KThread temp = new KThread(a);
 				aThreads.add(temp);
 		}
-		vector<KThread> cThreads = new vector<KThread>;
+		cThreads = new Vector<KThread>();
 		Runnable c = new Runnable(){
-			Public void run(){
-				ChildItinerary();
+			public void run(){
+				childItinerary();
 			}
 		};
 		for (int i = children; i > 0; i--){
-			KThread temp = new KThread(r);
+			KThread temp = new KThread(c);
 			cThreads.add(temp);
 		}
 		
@@ -70,34 +80,34 @@ public class Boat
 		// t.setName("Sample Boat Thread");
 		// t.fork();
 
-		}
-	Void aRun(){
-		for(i:aThreads){
-			aThreads.at(i).fork();
-			aThread.at(i).finish();
+	}
+	static void aRun(){
+		for(KThread i:aThreads){
+			i.fork();
 		}
 		cRun();
 	}
-	Void cRun(){
-		for(i:cThreads){
-			cThreads.at(i).fork();
+	static void cRun(){
+		for(KThread i:cThreads){
+			i.fork();
 			/*deliberate pseudo-infinite loop to keep iterating child threads until the simulation ends internally*/
-			if(i == cThreads.end(){
-				I = cThreads.begin();
+			if(i == cThreads.lastElement()){
+				i = cThreads.firstElement();
 			}
 		}
-		end();
+		//terminate if there are no child threads
+		Machine.terminate();
 	}
 
 
-	static void AdultItinerary()
+	static void adultItinerary()
 	{
 		/* This is where you should put your solutions. Make calls to the BoatGrader to show that it is synchronized. For example: bg.AdultRowToMolokai(); indicates that an adult has rowed the boat across to Molokai
 		*/
 		if(!boatOnOahu){
-			//if the boat’s on Molokai without any children to row it back, end simulation
+			//if the boat is on Molokai without any children to row it back, end simulation
 			if(cOnMolokai == 0){
-				end();
+				Machine.terminate();
 			}
 			else{
 				cRun();
@@ -114,10 +124,11 @@ public class Boat
 			boatOnOahu = false;
 			//In this implementation, once an adult is across, they no longer act
 			//Kill that thread
+			KThread.finish();
 		}
 	}
 
-	static void ChildItinerary()
+	static void childItinerary()
 	{
 		if(!boatOnOahu){
 			if(cOnMolokai > 0){
@@ -128,7 +139,7 @@ public class Boat
 				boatOnOahu = true;
 			}
 			else{
-				end();
+				Machine.terminate();
 			}
 		}
 		else if(cOnOahu == 1){
@@ -141,7 +152,7 @@ public class Boat
 				cOnOahu--;
 				bg.ChildRowToMolokai();
 				boatOnOahu = false;
-				end();
+				Machine.terminate();
 			}
 		}
 		else if (cOnOahu ==2 && aOnOahu == 0){
@@ -151,7 +162,7 @@ public class Boat
 			bg.ChildRowToMolokai();
 			bg.ChildRideToMolokai();
 			boatOnOahu = false;
-			end();
+			Machine.terminate();
 		}
 		else{
 			//2 children row to Molokai(cOnMolokai+=2, cOnOahu-=2)
@@ -161,16 +172,6 @@ public class Boat
 			bg.ChildRideToMolokai();
 			boatOnOahu = false;
 		}
-	}
-	Void end(){
-		for(i:aThreads){
-			aThreads.at(i).finish();
-		}
-		for (i:cThreads){
-			cThreads.at(i).finish();
-		}
-		//End simulation
-		Machine.terminate();
 	}
 
 
