@@ -113,7 +113,13 @@ public class Boat {
 					}
 					//if not on Molokai, wake an adult that is
 					else if(KThread.currentThread().getName().equals("Adult on Oahu")) {
-						aWaitingOnMolokai.wake();
+						if(cKnownOnMolokai > 0) {
+							//prioritize sending children from Molokai
+							cWaitingOnMolokai.wake();
+						}
+						else if(aKnownOnMolokai > 0) {
+							aWaitingOnMolokai.wake();
+						}
 						aWaitingOnOahu.sleep();
 					}
 					//otherwise, row to Oahu
@@ -123,6 +129,13 @@ public class Boat {
 						KThread.currentThread().setName("Adult on Oahu");
 						aKnownOnMolokai--;
 						aKnownOnOahu++;
+						if(cKnownOnOahu > 0) {
+							cWaitingOnOahu.wake();
+						}
+						else {
+							aWaitingOnOahu.wake();
+						}
+						aWaitingOnMolokai.sleep();
 					}
 				}
 				// otherwise, wake up a child thread on Molokai
@@ -136,12 +149,11 @@ public class Boat {
 				//prioritize waking children, if any
 				if(cKnownOnOahu > 0) {
 					cWaitingOnOahu.wake();
-					aWaitingOnMolokai.sleep();
 				}
 				else {
 					aWaitingOnOahu.wake();
-					aWaitingOnMolokai.sleep();
 				}
+				aWaitingOnMolokai.sleep();
 			}
 			else if (cKnownOnOahu > 1) {
 				//send any children first, so long as there's more than one
@@ -155,10 +167,16 @@ public class Boat {
 				KThread.currentThread().setName("Adult On Molokai");
 				aKnownOnOahu--;
 				aKnownOnMolokai++;
-				cWaitingOnMolokai.wake();
-				// In this implementation, once an adult is across, they no longer act
-				// Kill that thread
-				KThread.finish();
+				if(cKnownOnMolokai > 0) {
+					cWaitingOnMolokai.wake();
+				}
+				else if(aKnownOnMolokai > 1){
+					aWaitingOnMolokai.wake();
+				}
+				else {
+					Machine.terminate();
+				}
+				aWaitingOnMolokai.sleep();
 			} else {
 				// if the boat isn't empty, wake up a child on Oahu
 				cWaitingOnOahu.wake();
@@ -179,30 +197,36 @@ public class Boat {
 					cKnownOnMolokai--;
 					KThread.currentThread().setName("Child On Oahu");
 					boatOnOahu = true;
-					aWaitingOnOahu.wake();
-					cWaitingOnOahu.wake();
-					cWaitingOnOahu.sleep();
+					if(aKnownOnOahu > 0) {
+						//prioritize waking adults
+						aWaitingOnOahu.wake();
+					}
+					else {
+						cWaitingOnOahu.wake();
+					}
 				} else if(cKnownOnMolokai > 0){
 					// wake up a child on Molokai, if there are any
 					cWaitingOnMolokai.wake();
-					cWaitingOnOahu.sleep();
+				}
+				else if(aKnownOnMolokai > 0){
+					//wake an adult on Molokai, if any
+					aWaitingOnMolokai.wake();
 				}
 				else {
-					//otherwise, wake an adult on Molokai
-					aWaitingOnMolokai.wake();
-					cWaitingOnOahu.sleep();
+					//otherwise, terminate
+					Machine.terminate();
 				}
+				cWaitingOnOahu.sleep();
 			} else if (KThread.currentThread().getName().equals("Child On Molokai")) {
 				if(cKnownOnOahu > 0) {
 					// if this child isn't on Oahu, wake up one that is, if any
 					cWaitingOnOahu.wake();
-					cWaitingOnMolokai.sleep();
 				}
 				else {
 					//otherwise, wake an adult on Oahu
 					aWaitingOnOahu.wake();
-					cWaitingOnMolokai.sleep();
 				}
+				cWaitingOnMolokai.sleep();
 			} 
 			else if (waiting.size() == 0) {
 				if(cKnownOnOahu == 1) {
@@ -213,20 +237,20 @@ public class Boat {
 					}
 					//otherwise, row to Molokai alone
 					else {
-						bg.ChildRowToOahu();
+						bg.ChildRowToMolokai();
 						KThread.currentThread().setName("Child On Molokai");
 						cKnownOnOahu--;
 						cKnownOnMolokai++;
+						boatOnOahu = false;
 						if(cKnownOnMolokai > 0) {
-							// if this child isn't on Oahu, wake up one that is, if any
+							// if there are any other children on Molokai, wake them
 							cWaitingOnMolokai.wake();
-							cWaitingOnMolokai.sleep();
 						}
 						else {
-							//otherwise, wake an adult on Oahu
+							//otherwise, wake an adult on Molokai
 							aWaitingOnMolokai.wake();
-							cWaitingOnMolokai.sleep();
 						}
+						cWaitingOnMolokai.sleep();
 					}
 				}
 				// otherwise if the boat is empty, get on boat, wait
