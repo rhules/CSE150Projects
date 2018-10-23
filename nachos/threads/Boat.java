@@ -45,6 +45,17 @@ public class Boat
 		l = new Lock();
 		cWaitingInBoat = new Condition2(l);
 		waiting = new Vector<KThread>();
+		/*
+		 * The initial number of people (children and adults) on Oahu is 
+		 * known by everyone, because they are all present at the start
+		 * of the simulation. After this point, it will be treated as if
+		 * everyone is keeping track of the numbers by incrementing and
+		 * decrementing these variables whenever someone leaves or arrives
+		 * at one of the islands. 
+		 * 
+		 * The number of adults on Molokai is not tracked, because it 
+		 * isn't important in this implementation of the problem.
+		*/
 		cKnownOnMolokai = 0;
 		cKnownOnOahu = children;
 		aKnownOnOahu = adults;
@@ -102,13 +113,14 @@ public class Boat
 				if(cKnownOnMolokai == 0){
 					Machine.terminate();
 				}
+				//otherwise, wake up a child thread on Molokai
 				else{
 					cWaitingOnMolokai.wake();
 					aWaiting.sleep();
 				}
 			}
-			else{
-				//1 adult rows to Molokai(aOnMolokai++, aOnOahu--)
+			else if(waiting.size() == 0){
+				//if there isn't a child waiting in the boat, row to Molokai(aOnMolokai++, aOnOahu--)
 				bg.AdultRowToMolokai();
 				boatOnOahu = false;
 				KThread.currentThread().setName("Adult On Molokai");
@@ -117,6 +129,11 @@ public class Boat
 				//In this implementation, once an adult is across, they no longer act
 				//Kill that thread
 				KThread.finish();
+			}
+			else {
+				//if the boat isn't empty, wake up a child on Oahu
+				cWaitingOnOahu.wake();
+				aWaiting.sleep();
 			}
 		}
 		l.release();
@@ -149,48 +166,45 @@ public class Boat
 				cWaitingOnOahu.wake();
 				cWaitingOnMolokai.sleep();
 			}
-			else if(cKnownOnOahu == 1){
-				//if only one child is left on Oahu, send all the adults over first
-				if(aKnownOnOahu > 0){
-					aWaiting.wake();
-					cWaitingOnOahu.sleep();
-				}
-				else{
-					//row to Molokai, end simulation
-					KThread.currentThread().setName("Child On Molokai");
-					bg.ChildRowToMolokai();
-					cKnownOnMolokai++;
-					cKnownOnOahu--;
-					boatOnOahu = false;
-					Machine.terminate();
-				}
+			else if(aKnownOnOahu > 0) {
+				//prioritize sending adults over
+				aWaiting.wake();
+				cWaitingOnOahu.sleep();
 			}
-			else if (cKnownOnOahu >= 2 && aKnownOnOahu == 0){
-				if(waiting.size() == 0) {
-					//if the boat is empty, get on boat, wait
-					waiting.add(KThread.currentThread());
-					KThread.currentThread().setName("Child In Boat");
-					bg.ChildRowToMolokai();
-					cWaitingOnOahu.wake();
-					cWaitingInBoat.sleep();
-				}
-				else {
-					//if boat has 1 child in it, get in boat and leave
-					waiting.add(KThread.currentThread());
-					KThread.currentThread().setName("Child In Boat");
-					cKnownOnOahu -=2;
-					cKnownOnMolokai +=2;
-					bg.ChildRideToMolokai();
-					waiting.remove(KThread.currentThread());
-					KThread.currentThread().setName("Child On Molokai");
-					waiting.firstElement().setName("Child On Molokai");
-					waiting.remove(waiting.firstElement());
-					cWaitingInBoat.wake();
-					cWaitingOnMolokai.wake();
-					aWaiting.wake();
-					cWaitingOnMolokai.sleep();
-					boatOnOahu = false;
-				}
+			else if(cKnownOnOahu == 1){
+				//row to Molokai, end simulation
+				KThread.currentThread().setName("Child On Molokai");
+				bg.ChildRowToMolokai();
+				cKnownOnMolokai++;
+				cKnownOnOahu--;
+				boatOnOahu = false;
+				Machine.terminate();
+			}
+			else if(waiting.size() == 0){
+				//if the boat is empty, get on boat, wait
+				waiting.add(KThread.currentThread());
+				KThread.currentThread().setName("Child In Boat");
+				cKnownOnOahu--;
+				bg.ChildRowToMolokai();
+				cWaitingOnOahu.wake();
+				cWaitingInBoat.sleep();
+			}
+			else {
+				//if boat has 1 child in it, get in boat and leave for Molokai
+				waiting.add(KThread.currentThread());
+				KThread.currentThread().setName("Child In Boat");
+				cKnownOnOahu --;
+				cKnownOnMolokai +=2;
+				bg.ChildRideToMolokai();
+				waiting.remove(KThread.currentThread());
+				KThread.currentThread().setName("Child On Molokai");
+				waiting.firstElement().setName("Child On Molokai");
+				waiting.remove(waiting.firstElement());
+				cWaitingInBoat.wake();
+				cWaitingOnMolokai.wake();
+				aWaiting.wake();
+				cWaitingOnMolokai.sleep();
+				boatOnOahu = false;
 			}
 		}
 		l.release();
