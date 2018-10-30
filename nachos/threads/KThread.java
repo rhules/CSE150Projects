@@ -279,16 +279,19 @@ public class KThread {
 //    statusBlocked = 3;
 //    statusFinished = 4;
     
+    // if join() is called, alreadyCalled = true. 
+    // public boolean alreadyCalled = false;
+    
+    // struggle remaining;
     // public Lock joinLock = new Lock();
     // public Condition2 joinCond = new Condition2(joinLock);
     
     public void join() {
 	Lib.debug(dbgThread, "Joining to thread: " + toString());
-	
-	boolean status = Machine.interrupt().disable();
+	Lib.assertTrue(this != currentThread);
 
 	// disable interrupts;
-	// Machine.interrupt().disable();
+	Machine.interrupt().disable();
 	
 	// statusFinished = 4.
 	if (this.status != 4) 
@@ -296,10 +299,11 @@ public class KThread {
 		waitList.waitForAccess(currentThread);
 		KThread.sleep();
 	}
-	Machine.interrupt().restore(status);
-
-	Lib.assertTrue(this != currentThread);
-    
+	
+//	else 
+//		return;
+	
+	Machine.interrupt().enable();
     }
     
 
