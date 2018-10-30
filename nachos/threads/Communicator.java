@@ -19,8 +19,8 @@ public class Communicator {
 	Condition2 activeListener;
 	Condition2 listenerQueue;
 	Condition2 speakerQueue;
-	boolean waitingListener = false; 
-	boolean waitingSpeaker = false;
+	int waitingListener = 0; 
+	int waitingSpeaker = 0;
 	
 	int getWord;
 	boolean wordReady;
@@ -47,21 +47,21 @@ public class Communicator {
     public void speak(int word) {
     	
     	lock.acquire();
-    	waitingSpeaker = true;
-		while(waitingListener){ 
+    	waitingSpeaker++;
+		while(waitingListener == 0){ 
 			//Add speaker to waiting queue
-			waitingSpeaker = true;
+			waitingSpeaker++;
 			activeListener.sleep();
 		}
-		waitingListener = false;
+		waitingListener--;
 		//Prevent other speakers from speaking
 		
 		
 		getWord = word;
 		activeSpeaker.wake();
-
 		
-	
+		
+		
 		lock.release();
     }
 
@@ -73,11 +73,11 @@ public class Communicator {
      */    
     public int listen() {
     	lock.acquire();
-		waitingListener = true;
+		waitingListener++;
 		activeListener.wake();
-		while(waitingSpeaker = false)
+		while(waitingSpeaker == 0)
 			activeSpeaker.sleep();
-		waitingSpeaker = false;
+		waitingSpeaker--;
 		lock.release();
 		return getWord;
 	
