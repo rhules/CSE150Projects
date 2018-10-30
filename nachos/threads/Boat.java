@@ -104,7 +104,7 @@ public class Boat {
 		 * that an adult has rowed the boat across to Molokai
 		 */
 		l.acquire();
-		while (aKnownOnOahu > 0 && cKnownOnOahu > 0) {
+		while (aKnownOnOahu > 0 && cKnownOnOahu > 0 && waiting.size() > 0) {
 			if (!boatOnOahu) {
 				if (cKnownOnMolokai == 0) {
 					//if there is only one child in the system, end here to avoid infinite looping
@@ -113,13 +113,9 @@ public class Boat {
 					}
 					//if not on Molokai, wake an adult that is
 					else if(KThread.currentThread().getName().equals("Adult on Oahu")) {
-						if(cKnownOnMolokai > 0) {
-							//prioritize sending children from Molokai
-							cWaitingOnMolokai.wake();
-						}
-						else if(aKnownOnMolokai > 0) {
-							aWaitingOnMolokai.wake();
-						}
+						//prioritize sending children from Molokai
+						cWaitingOnMolokai.wake();
+						aWaitingOnMolokai.wake();
 						aWaitingOnOahu.sleep();
 					}
 					//otherwise, row to Oahu
@@ -129,35 +125,23 @@ public class Boat {
 						KThread.currentThread().setName("Adult on Oahu");
 						aKnownOnMolokai--;
 						aKnownOnOahu++;
-						if(cKnownOnOahu > 0) {
-							cWaitingOnOahu.wake();
-						}
-						else {
-							aWaitingOnOahu.wake();
-						}
+						cWaitingOnOahu.wake();
+						aWaitingOnOahu.wake();
 						aWaitingOnOahu.sleep();
 					}
 				}
 				// otherwise, wake up a thread on Molokai
 				else {
-					if(cKnownOnMolokai > 0) {
-						cWaitingOnMolokai.wake();
-					}
-					else {
-						aWaitingOnMolokai.wake();
-					}
+					cWaitingOnMolokai.wake();
+					aWaitingOnMolokai.wake();
 					aWaitingOnOahu.sleep();
 				}
 			} 
 			//if the boat is on Oahu, but this thread isn't, wake a thread that is
 			else if(KThread.currentThread().getName().equals("Adult on Molokai")) {
 				//prioritize waking children, if any
-				if(cKnownOnOahu > 0) {
-					cWaitingOnOahu.wake();
-				}
-				else {
-					aWaitingOnOahu.wake();
-				}
+				cWaitingOnOahu.wake();
+				aWaitingOnOahu.wake();
 				aWaitingOnMolokai.sleep();
 			}
 			else if (cKnownOnOahu > 1) {
@@ -172,15 +156,8 @@ public class Boat {
 				KThread.currentThread().setName("Adult On Molokai");
 				aKnownOnOahu--;
 				aKnownOnMolokai++;
-				if(cKnownOnMolokai > 0) {
-					cWaitingOnMolokai.wake();
-				}
-				else if(aKnownOnMolokai > 1){
-					aWaitingOnMolokai.wake();
-				}
-				else {
-					break;
-				}
+				cWaitingOnMolokai.wake();
+				aWaitingOnMolokai.wake();
 				aWaitingOnMolokai.sleep();
 			} else {
 				// if the boat isn't empty, wake up a child on Oahu
@@ -193,7 +170,7 @@ public class Boat {
 
 	static void childItinerary() {
 		l.acquire();
-		while (aKnownOnOahu > 0 && cKnownOnOahu > 0) {
+		while (aKnownOnOahu > 0 && cKnownOnOahu > 0 && waiting.size() > 0) {
 			if (!boatOnOahu) {
 				if (KThread.currentThread().getName().equals("Child On Molokai")) {
 					// row to Oahu
@@ -202,35 +179,18 @@ public class Boat {
 					cKnownOnMolokai--;
 					KThread.currentThread().setName("Child On Oahu");
 					boatOnOahu = true;
-					if(aKnownOnOahu > 0) {
-						//prioritize waking adults
-						aWaitingOnOahu.wake();
-					}
-					else {
-						cWaitingOnOahu.wake();
-					}
-				} else if(cKnownOnMolokai > 0){
-					// wake up a child on Molokai, if there are any
-					cWaitingOnMolokai.wake();
-				}
-				else if(aKnownOnMolokai > 0){
-					//wake an adult on Molokai, if any
-					aWaitingOnMolokai.wake();
-				}
-				else {
-					//otherwise, terminate
-					break;
-				}
-				cWaitingOnOahu.sleep();
-			} else if (KThread.currentThread().getName().equals("Child On Molokai")) {
-				if(cKnownOnOahu > 0) {
-					// if this child isn't on Oahu, wake up one that is, if any
+					aWaitingOnOahu.wake();
 					cWaitingOnOahu.wake();
 				}
 				else {
-					//otherwise, wake an adult on Oahu
-					aWaitingOnOahu.wake();
+					cWaitingOnMolokai.wake();
+					aWaitingOnMolokai.wake();
 				}
+				cWaitingOnOahu.sleep();
+			}
+			else if (KThread.currentThread().getName().equals("Child On Molokai")) {
+				cWaitingOnOahu.wake();
+				aWaitingOnOahu.wake();
 				cWaitingOnMolokai.sleep();
 			} 
 			else if (waiting.size() == 0) {
