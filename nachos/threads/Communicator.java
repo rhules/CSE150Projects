@@ -15,10 +15,10 @@ public class Communicator {
      */
 	Lock lock = new Lock();
 	
-	Condition activeSpeaker;
-	Condition activeListener;
-	Condition listenerQueue;
-	Condition speakerQueue;
+	Condition2 activeSpeaker = new Condition2(lock);
+	Condition2 activeListener = new Condition2(lock);
+	Condition2 listenerQueue = new Condition2(lock);
+	Condition2 speakerQueue = new Condition2(lock);
 	boolean waitingListener = false; 
 	boolean waitingSpeaker = false;
 	

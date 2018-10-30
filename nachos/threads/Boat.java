@@ -104,12 +104,12 @@ public class Boat {
 		 * that an adult has rowed the boat across to Molokai
 		 */
 		l.acquire();
-		while (!isDone()) {
+		while (aKnownOnOahu > 0 && cKnownOnOahu > 0) {
 			if (!boatOnOahu) {
 				if (cKnownOnMolokai == 0) {
 					//if there is only one child in the system, end here to avoid infinite looping
 					if(cKnownOnOahu < 2) {
-						Machine.terminate();
+						break;
 					}
 					//if not on Molokai, wake an adult that is
 					else if(KThread.currentThread().getName().equals("Adult on Oahu")) {
@@ -135,12 +135,17 @@ public class Boat {
 						else {
 							aWaitingOnOahu.wake();
 						}
-						aWaitingOnMolokai.sleep();
+						aWaitingOnOahu.sleep();
 					}
 				}
-				// otherwise, wake up a child thread on Molokai
+				// otherwise, wake up a thread on Molokai
 				else {
-					cWaitingOnMolokai.wake();
+					if(cKnownOnMolokai > 0) {
+						cWaitingOnMolokai.wake();
+					}
+					else {
+						aWaitingOnMolokai.wake();
+					}
 					aWaitingOnOahu.sleep();
 				}
 			} 
@@ -174,7 +179,7 @@ public class Boat {
 					aWaitingOnMolokai.wake();
 				}
 				else {
-					Machine.terminate();
+					break;
 				}
 				aWaitingOnMolokai.sleep();
 			} else {
@@ -188,7 +193,7 @@ public class Boat {
 
 	static void childItinerary() {
 		l.acquire();
-		while (!isDone()) {
+		while (aKnownOnOahu > 0 && cKnownOnOahu > 0) {
 			if (!boatOnOahu) {
 				if (KThread.currentThread().getName().equals("Child On Molokai")) {
 					// row to Oahu
@@ -214,7 +219,7 @@ public class Boat {
 				}
 				else {
 					//otherwise, terminate
-					Machine.terminate();
+					break;
 				}
 				cWaitingOnOahu.sleep();
 			} else if (KThread.currentThread().getName().equals("Child On Molokai")) {
@@ -275,19 +280,12 @@ public class Boat {
 				waiting.remove(waiting.firstElement());
 				cWaitingInBoat.wake();
 				cWaitingOnMolokai.wake();
-				aWaitingOnOahu.wake();
+				aWaitingOnMolokai.wake();
 				cWaitingOnMolokai.sleep();
 				boatOnOahu = false;
 			}
 		}
 		l.release();
-	}
-
-	static boolean isDone() {
-		if (aKnownOnOahu == 0 && cKnownOnOahu == 0) {
-			Machine.terminate();
-		}
-		return false;
 	}
 
 	static void SampleItinerary() {
