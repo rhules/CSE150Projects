@@ -29,9 +29,9 @@ import java.util.LinkedList;
  */
 
 public class PriorityScheduler extends Scheduler {
-
-	boolean checkPriority;
-
+	
+	boolean checkPriority; 
+	
 	/**
 	 * Allocate a new priority scheduler.
 	 */
@@ -41,9 +41,8 @@ public class PriorityScheduler extends Scheduler {
 	/**
 	 * Allocate a new priority thread queue.
 	 *
-	 * @param transferPriority
-	 *            <tt>true</tt> if this queue should transfer priority from
-	 *            waiting threads to the owning thread.
+	 * @param transferPriority <tt>true</tt> if this queue should transfer priority
+	 *                         from waiting threads to the owning thread.
 	 * @return a new priority thread queue.
 	 */
 	public ThreadQueue newThreadQueue(boolean transferPriority) {
@@ -116,8 +115,7 @@ public class PriorityScheduler extends Scheduler {
 	/**
 	 * Return the scheduling state of the specified thread.
 	 *
-	 * @param thread
-	 *            the thread whose scheduling state to return.
+	 * @param thread the thread whose scheduling state to return.
 	 * @return the scheduling state of the specified thread.
 	 */
 	protected ThreadState getThreadState(KThread thread) {
@@ -132,12 +130,12 @@ public class PriorityScheduler extends Scheduler {
 	 */
 	protected class PriorityQueue extends ThreadQueue {
 
-		protected LinkedList<ThreadState> queue = new LinkedList<ThreadState>();
+	    LinkedList <ThreadState> queue;
 
 		PriorityQueue(boolean transferPriority) {
 			this.transferPriority = transferPriority;
-//			queue = new LinkedList<ThreadState>();
-
+			queue = new LinkedList<ThreadState>();
+			
 		}
 
 		public void waitForAccess(KThread thread) {
@@ -153,33 +151,28 @@ public class PriorityScheduler extends Scheduler {
 		public KThread nextThread() {
 			Lib.assertTrue(Machine.interrupt().disabled());
 			// implement me
-			if (queue.isEmpty()) {
-				return null;
-			} else {
-				return pickNextThread().thread;
-			}
-			// return null;
+			return pickNextThread().thread;
+			//return null;
 		}
 
-		/**
-		 * Return the next thread that <tt>nextThread()</tt> would return,
-		 * without modifying the state of this queue.
-		 *
-		 * @return the next thread that <tt>nextThread()</tt> would return.
-		 */
-		protected ThreadState pickNextThread() {
-			// implement me
-
-			// check to see if queue is empty
-			if (queue.peek() == null) {
-				return null;
-			}
-
-			// return first val
-			else{
-				return queue.removeFirst();
-			}
+	/**
+	 * Return the next thread that <tt>nextThread()</tt> would return,
+	 * without modifying the state of this queue.
+	 *
+	 * @return	the next thread that <tt>nextThread()</tt> would
+	 *		return.
+	 */
+	protected ThreadState pickNextThread() {
+	    // implement me
+		
+	    //check to see if queue is empty
+		if (queue.peek()== null) {
+	    return null;
 		}
+		
+		//return first val  
+		return queue.peek();
+	}
 
 		public void print() {
 			Lib.assertTrue(Machine.interrupt().disabled());
@@ -187,16 +180,16 @@ public class PriorityScheduler extends Scheduler {
 		}
 
 		/**
-		 * <tt>true</tt> if this queue should transfer priority from waiting
-		 * threads to the owning thread.
+		 * <tt>true</tt> if this queue should transfer priority from waiting threads to
+		 * the owning thread.
 		 */
 		public boolean transferPriority;
 	}
 
 	/**
-	 * The scheduling state of a thread. This should include the thread's
-	 * priority, its effective priority, any objects it owns, and the queue it's
-	 * waiting for, if any.
+	 * The scheduling state of a thread. This should include the thread's priority,
+	 * its effective priority, any objects it owns, and the queue it's waiting for,
+	 * if any.
 	 *
 	 * @see nachos.threads.KThread#schedulingState
 	 */
@@ -205,8 +198,7 @@ public class PriorityScheduler extends Scheduler {
 		 * Allocate a new <tt>ThreadState</tt> object and associate it with the
 		 * specified thread.
 		 *
-		 * @param thread
-		 *            the thread this state belongs to.
+		 * @param thread the thread this state belongs to.
 		 */
 		public ThreadState(KThread thread) {
 			this.thread = thread;
@@ -220,6 +212,11 @@ public class PriorityScheduler extends Scheduler {
 		 * @return the priority of the associated thread.
 		 */
 		public int getPriority() {
+
+//			thread.currentThread();
+//			int priorityVal = priority;
+//
+
 			return priority;
 		}
 
@@ -236,26 +233,25 @@ public class PriorityScheduler extends Scheduler {
 		/**
 		 * Set the priority of the associated thread to the specified value.
 		 *
-		 * @param priority
-		 *            the new priority.
+		 * @param priority the new priority.
 		 */
 		public void setPriority(int priority) {
-			if (this.priority == priority) {
+			if (this.priority == priority)
 				return;
-			} else {
-				this.priority = priority;
-			}
+
+			this.priority = priority;
+			// implement me
+			getEffectivePriority();
 		}
 
 		/**
-		 * Called when <tt>waitForAccess(thread)</tt> (where <tt>thread</tt> is
-		 * the associated thread) is invoked on the specified priority queue.
-		 * The associated thread is therefore waiting for access to the resource
-		 * guarded by <tt>waitQueue</tt>. This method is only called if the
-		 * associated thread cannot immediately obtain access.
+		 * Called when <tt>waitForAccess(thread)</tt> (where <tt>thread</tt> is the
+		 * associated thread) is invoked on the specified priority queue. The associated
+		 * thread is therefore waiting for access to the resource guarded by
+		 * <tt>waitQueue</tt>. This method is only called if the associated thread
+		 * cannot immediately obtain access.
 		 *
-		 * @param waitQueue
-		 *            the queue that the associated thread is now waiting on.
+		 * @param waitQueue the queue that the associated thread is now waiting on.
 		 *
 		 * @see nachos.threads.ThreadQueue#waitForAccess
 		 */
@@ -277,8 +273,8 @@ public class PriorityScheduler extends Scheduler {
 		}
 
 		/**
-		 * Called when the associated thread has acquired access to whatever is
-		 * guarded by <tt>waitQueue</tt>. This can occur either as a result of
+		 * Called when the associated thread has acquired access to whatever is guarded
+		 * by <tt>waitQueue</tt>. This can occur either as a result of
 		 * <tt>acquire(thread)</tt> being invoked on <tt>waitQueue</tt> (where
 		 * <tt>thread</tt> is the associated thread), or as a result of
 		 * <tt>nextThread()</tt> being invoked on <tt>waitQueue</tt>.
