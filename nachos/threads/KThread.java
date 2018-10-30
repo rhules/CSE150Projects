@@ -282,32 +282,28 @@ public class KThread {
     // if join() is called, alreadyCalled = true. 
     // public boolean alreadyCalled = false;
     
-    public Lock joinLock = new Lock();
-    public Condition2 joinCond = new Condition2(joinLock);
+    // struggle remaining;
+    // public Lock joinLock = new Lock();
+    // public Condition2 joinCond = new Condition2(joinLock);
     
     public void join() {
 	Lib.debug(dbgThread, "Joining to thread: " + toString());
 	Lib.assertTrue(this != currentThread);
-	
-	// Machine.interrupt().disable();
-	
-	joinLock.acquire();
+
+	// disable interrupts;
+	Machine.interrupt().disable();
 	
 	// statusFinished = 4.
-	
-	
 	if (this.status != 4) 
 	{
 		waitList.waitForAccess(currentThread);
-		joinCond.sleep();
+		KThread.sleep();
 	}
 	
-	else 
-		return;
+//	else 
+//		return;
 	
-	joinLock.release();
-	
-    
+	Machine.interrupt().enable();
     }
     
 
