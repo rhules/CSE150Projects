@@ -108,11 +108,11 @@ public class Boat {
 			if (!boatOnOahu) {
 				if (cKnownOnMolokai == 0) {
 					//if there is only one child in the system, end here to avoid infinite looping
-					if(cKnownOnOahu < 2) {
+					/*if(cKnownOnOahu < 2) {
 						break;
 					}
 					//if not on Molokai, wake an adult that is
-					else if(KThread.currentThread().getName().equals("Adult on Oahu")) {
+					else */if(KThread.currentThread().getName().equals("Adult on Oahu")) {
 						//prioritize sending children from Molokai
 						cWaitingOnMolokai.wake();
 						aWaitingOnMolokai.wake();
@@ -159,7 +159,8 @@ public class Boat {
 				cWaitingOnMolokai.wake();
 				aWaitingOnMolokai.wake();
 				aWaitingOnMolokai.sleep();
-			} else {
+			}
+			else {
 				// if the boat isn't empty, wake up a child on Oahu
 				cWaitingOnOahu.wake();
 				aWaitingOnOahu.sleep();
