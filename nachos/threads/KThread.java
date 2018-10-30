@@ -289,13 +289,22 @@ public class KThread {
 	Lib.debug(dbgThread, "Joining to thread: " + toString());
 	Lib.assertTrue(this != currentThread);
 	
-	Machine.interrupt().disable();
-	// statusFinished = 4.
-	if (this.status == 4)
-		return;
+	// Machine.interrupt().disable();
 	
 	joinLock.acquire();
-	joinCond.sleep();
+	
+	// statusFinished = 4.
+	
+	
+	if (this.status != 4) 
+	{
+		waitList.waitForAccess(currentThread);
+		joinCond.sleep();
+	}
+	
+	else 
+		return;
+	
 	joinLock.release();
 	
     
@@ -462,7 +471,11 @@ public class KThread {
     private int id = numCreated++;
     /** Number of times the KThread constructor was called. */
     private static int numCreated = 0;
+    
+    
 
+    private ThreadQueue waitList = null;
+    
     private static ThreadQueue readyQueue = null;
     private static KThread currentThread = null;
     private static KThread toBeDestroyed = null;
