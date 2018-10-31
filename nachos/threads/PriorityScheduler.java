@@ -131,12 +131,8 @@ public class PriorityScheduler extends Scheduler {
 	 * A <tt>ThreadQueue</tt> that sorts threads by priority.
 	 */
 	protected class PriorityQueue extends ThreadQueue {
-
-		protected LinkedList<ThreadState> queue = new LinkedList<ThreadState>();
-
 		PriorityQueue(boolean transferPriority) {
 			this.transferPriority = transferPriority;
-//			queue = new LinkedList<ThreadState>();
 		}
 
 		public void waitForAccess(KThread thread) {
@@ -155,7 +151,12 @@ public class PriorityScheduler extends Scheduler {
 			if (queue.isEmpty()) {
 				return null;
 			} else {
-				return pickNextThread().thread;
+//				if(pickNextThread().thread !=null){
+					return pickNextThread().thread;
+//				}
+//				else{ 
+//					return null;
+//				}
 			}
 		}
 
@@ -175,7 +176,6 @@ public class PriorityScheduler extends Scheduler {
 			// return first val
 			else{
 				return queue.removeFirst();
-				
 			}
 		}
 
@@ -189,6 +189,8 @@ public class PriorityScheduler extends Scheduler {
 		 * threads to the owning thread.
 		 */
 		public boolean transferPriority;
+		
+		protected LinkedList<ThreadState> queue = new LinkedList<ThreadState>();
 	}
 
 	/**
@@ -228,11 +230,8 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public int getEffectivePriority() {
 			// implement me
-			
-//			effectivePriority = priority;
-//			
-//			System.out.println(effectivePriority);
-			
+			//this is for no priority donation
+			effectivePriority = priority;
 			return effectivePriority;
 		}
 
@@ -264,19 +263,22 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public void waitForAccess(PriorityQueue waitQueue) {
 			// implement me
-
-			// must disable interrupt
-			boolean result = Machine.interrupt().disable();
-
-			// add to the queue if not already on the thread
-			if (!waitQueue.queue.contains(this)) {
-				waitQueue.queue.add(this);
-			}
-			// order of effective priorities has now changed
-			getEffectivePriority();
-
-			// get back to original state
-			Machine.interrupt().restore(result);
+//			// must disable interrupt
+//			boolean result = Machine.interrupt().disable();
+//			// add to the queue if not already on the thread
+//			if (!waitQueue.queue.contains(this)) {
+//				waitQueue.queue.add(this);
+//			}
+//			// order of effective priorities has now changed
+//			getEffectivePriority();
+//			// get back to original state
+//			Machine.interrupt().restore(result);
+//		    Lib.assertTrue(Machine.interrupt().disabled());
+//			waitQueue.transferPriority = true;
+			//from round robin
+		    Lib.assertTrue(Machine.interrupt().disabled());
+		       
+		    waitQueue.queue.add(this);
 		}
 
 		/**
@@ -290,15 +292,17 @@ public class PriorityScheduler extends Scheduler {
 		 * @see nachos.threads.ThreadQueue#nextThread
 		 */
 		public void acquire(PriorityQueue waitQueue) {
-//		    Lib.assertTrue(Machine.interrupt().disabled());
-//		       
-//		    Lib.assertTrue(waitQueue.isEmpty());
+			//from round robin
+		    Lib.assertTrue(Machine.interrupt().disabled());
+		    
+		    Lib.assertTrue(waitQueue.queue.isEmpty());
 		}
 
 		/** The thread with which this object is associated. */
 		protected KThread thread;
 		/** The priority of the associated thread. */
 		protected int priority;
+		
 		
 		protected int effectivePriority;
 	}
