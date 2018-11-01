@@ -17,19 +17,19 @@ public class Communicator {
 	
 	Condition2 activeSpeaker;
 	Condition2 activeListener;
-	Condition2 listenerQueue;
-	Condition2 speakerQueue;
+	//Condition2 listenerQueue;
+	Condition2 speakerInQueue;
 	int waitingListener = 0; 
 	int waitingSpeaker = 0;
 	
 	int getWord;
-	boolean wordReady;
+	boolean wordReady = false;
    
 	public Communicator() {
 		activeSpeaker = new Condition2(lock);
 		activeListener = new Condition2(lock);
-		listenerQueue = new Condition2(lock);
-		speakerQueue = new Condition2(lock);
+		//listenerQueue = new Condition2(lock);
+		speakerInQueue = new Condition2(lock);
 		
 	 	
     }
@@ -48,19 +48,19 @@ public class Communicator {
     	
     	lock.acquire();
     	waitingSpeaker++;
-		while(waitingListener == 0){ 
-			//Add speaker to waiting queue
-			waitingSpeaker++;
-			activeListener.sleep();
+		while(waitingSpeaker == 0 || wordReady){ 
+			
+			activeSpeaker.sleep();
 		}
-		waitingListener--;
-		//Prevent other speakers from speaking
+		//waitingListener--;
+		
 		
 		
 		getWord = word;
-		activeSpeaker.wake();
-		
-		
+		wordReady = true;
+		activeListener.wake();
+		speakerInQueue.sleep();
+		waitingSpeaker--;
 		
 		lock.release();
     }
@@ -73,13 +73,19 @@ public class Communicator {
      */    
     public int listen() {
     	lock.acquire();
-		waitingListener++;
+		
 		activeListener.wake();
-		while(waitingSpeaker == 0)
-			activeSpeaker.sleep();
-		waitingSpeaker--;
+		while(waitingSpeaker == 0 || !wordReady)
+			activeListener.sleep();
+		
+		int gotWord = getWord;
+		wordReady = false;
+		
+		activeSpeaker.wake();
+		speakerInQueue.wake();
+		
 		lock.release();
-		return getWord;
+		return gotWord;
 	
 		//return 0;
     }
