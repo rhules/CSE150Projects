@@ -111,12 +111,10 @@ public class Boat {
 					/*if(cKnownOnOahu < 2) {
 						break;
 					}
-					//if not on Molokai, wake an adult that is
+					//if not on Molokai, wake a thread that is
 					else */if(KThread.currentThread().getName().equals("Adult on Oahu")) {
-						//prioritize sending children from Molokai
 						cWaitingOnMolokai.wake();
 						aWaitingOnMolokai.wake();
-						aWaitingOnOahu.sleep();
 					}
 					//otherwise, row to Oahu
 					else {
@@ -127,8 +125,8 @@ public class Boat {
 						aKnownOnOahu++;
 						cWaitingOnOahu.wake();
 						aWaitingOnOahu.wake();
-						aWaitingOnOahu.sleep();
 					}
+					aWaitingOnOahu.sleep();
 				}
 				// otherwise, wake up a thread on Molokai
 				else {
@@ -139,12 +137,11 @@ public class Boat {
 			} 
 			//if the boat is on Oahu, but this thread isn't, wake a thread that is
 			else if(KThread.currentThread().getName().equals("Adult on Molokai")) {
-				//prioritize waking children, if any
 				cWaitingOnOahu.wake();
 				aWaitingOnOahu.wake();
 				aWaitingOnMolokai.sleep();
 			}
-			else if (cKnownOnOahu > 1) {
+			else if (cKnownOnOahu > 0) {
 				//send any children first, so long as there's more than one
 				cWaitingOnOahu.wake();
 				aWaitingOnOahu.sleep();
@@ -189,6 +186,7 @@ public class Boat {
 				}
 				cWaitingOnOahu.sleep();
 			}
+			//if the boat is on Oahu, and this thread isn't, wake a thread on Oahu
 			else if (KThread.currentThread().getName().equals("Child On Molokai")) {
 				cWaitingOnOahu.wake();
 				aWaitingOnOahu.wake();
@@ -228,7 +226,8 @@ public class Boat {
 					cWaitingOnOahu.wake();
 					cWaitingInBoat.sleep();
 				}
-			} else {
+			}
+			else {
 				// if boat has 1 child in it, get in boat and leave for Molokai
 				waiting.add(KThread.currentThread());
 				KThread.currentThread().setName("Child In Boat");
