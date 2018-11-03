@@ -108,11 +108,11 @@ public class Boat {
 			if (!boatOnOahu) {
 				if (cKnownOnMolokai == 0) {
 					//if there is only one child in the system, end here to avoid infinite looping
-					/*if(cKnownOnOahu < 2) {
+					if(cKnownOnOahu < 2) {
 						break;
 					}
 					//if not on Molokai, wake a thread that is
-					else */if(KThread.currentThread().getName().equals("Adult on Oahu")) {
+					else if(KThread.currentThread().getName().equals("Adult on Oahu")) {
 						cWaitingOnMolokai.wake();
 						aWaitingOnMolokai.wake();
 					}
@@ -126,14 +126,13 @@ public class Boat {
 						cWaitingOnOahu.wake();
 						aWaitingOnOahu.wake();
 					}
-					aWaitingOnOahu.sleep();
 				}
 				// otherwise, wake up a thread on Molokai
 				else {
 					cWaitingOnMolokai.wake();
-					aWaitingOnMolokai.wake();
-					aWaitingOnOahu.sleep();
+					//aWaitingOnMolokai.wake();
 				}
+				aWaitingOnOahu.sleep();
 			} 
 			//if the boat is on Oahu, but this thread isn't, wake a thread that is
 			else if(KThread.currentThread().getName().equals("Adult on Molokai")) {
@@ -206,14 +205,8 @@ public class Boat {
 						cKnownOnOahu--;
 						cKnownOnMolokai++;
 						boatOnOahu = false;
-						if(cKnownOnMolokai > 0) {
-							// if there are any other children on Molokai, wake them
-							cWaitingOnMolokai.wake();
-						}
-						else {
-							//otherwise, wake an adult on Molokai
-							aWaitingOnMolokai.wake();
-						}
+						cWaitingOnMolokai.wake();
+						aWaitingOnMolokai.wake();
 						cWaitingOnMolokai.sleep();
 					}
 				}
@@ -229,12 +222,10 @@ public class Boat {
 			}
 			else {
 				// if boat has 1 child in it, get in boat and leave for Molokai
-				waiting.add(KThread.currentThread());
 				KThread.currentThread().setName("Child In Boat");
 				cKnownOnOahu--;
 				cKnownOnMolokai += 2;
 				bg.ChildRideToMolokai();
-				waiting.remove(KThread.currentThread());
 				KThread.currentThread().setName("Child On Molokai");
 				waiting.firstElement().setName("Child On Molokai");
 				waiting.remove(waiting.firstElement());
