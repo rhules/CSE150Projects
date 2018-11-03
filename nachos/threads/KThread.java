@@ -284,24 +284,35 @@ public class KThread {
     
     public void join() {
 	Lib.debug(dbgThread, "Joining to thread: " + toString());
+	Lib.assertTrue(this != currentThread);
+
 	
 	boolean status = Machine.interrupt().disable();
-
+	
+	// have to implement a condition to check. 
+	// if the wait queue is empty; 
+	if (waitList == null) {
+		waitList = ThreadedKernel.scheduler.newThreadQueue(true);
+	}
+	
 	// disable interrupts;
 	// Machine.interrupt().disable();
 	
 	// statusFinished = 4.
-	if (this.status != 4) 
+	if (this.status != 4 && currentThread != this) 
 	{
 		waitList.waitForAccess(currentThread);
 		KThread.sleep();
+	} else {
+		return;
 	}
+	
+	
 	Machine.interrupt().restore(status);
 
 	Lib.assertTrue(this != currentThread);
     
     }
-    
 
     /**
      * Create the idle thread. Whenever there are no threads ready to be run,
