@@ -295,18 +295,14 @@ public class KThread {
 
 		boolean status = Machine.interrupt().disable();
 
-		if (this.status != 4) {
-			waitList.acquire(this);
-			waitList.waitForAccess(currentThread);
+		waitList.acquire(this);
+		waitList.waitForAccess(currentThread);
 
-			// let current thread sleep
-			currentThread.sleep();
+		// let current thread sleep
+		currentThread.sleep();
 
-		}
-
+		// restore interrupts
 		Machine.interrupt().restore(status);
-
-		Lib.assertTrue(this != currentThread);
 
 	}
 
