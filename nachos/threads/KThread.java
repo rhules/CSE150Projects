@@ -193,11 +193,11 @@ public class KThread {
 
 		currentThread.status = statusFinished;
 
-//		KThread thread = currentThread.waitList.nextThread();
-//		if (thread != null) {
-//			thread.ready();
-//			thread = currentThread.waitList.nextThread();
-//		}
+		//		KThread thread = currentThread.waitList.nextThread();
+		//		if (thread != null) {
+		//			thread.ready();
+		//			thread = currentThread.waitList.nextThread();
+		//		}
 
 		sleep();
 	}
@@ -306,14 +306,19 @@ public class KThread {
 			waitList = ThreadedKernel.scheduler.newThreadQueue(true);
 		}
 
-		if (this.status != 4) 
-		{
-			waitList.acquire(this);
-			waitList.waitForAccess(currentThread);
-			KThread.sleep();
-		} else if (this.status == statusFinished) {
+		if (this.status == statusFinished) {
 			return;
+		} else {
+
+			while (currentThread != this) {
+				waitList.acquire(this);
+				waitList.waitForAccess(currentThread);
+				KThread.sleep();
+			
+			}
+
 		}
+
 
 		Machine.interrupt().restore(machineStatus);
 
