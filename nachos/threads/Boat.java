@@ -104,7 +104,7 @@ public class Boat {
 		 * that an adult has rowed the boat across to Molokai
 		 */
 		l.acquire();
-		while (aKnownOnOahu + cKnownOnOahu + waiting.size() > 0) {
+		while (aKnownOnOahu + cKnownOnOahu > 0 && waiting.isEmpty()) {
 			if (!boatOnOahu) {
 				if (cKnownOnMolokai == 0) {
 					//if there is only one child in the system, end here to avoid infinite looping
@@ -144,7 +144,7 @@ public class Boat {
 				cWaitingOnOahu.wake();
 				//aWaitingOnOahu.sleep();
 			}
-			else if (waiting.size() == 0) {
+			else if (waiting.isEmpty()) {
 				// if there isn't a child waiting in the boat, row to Molokai
 				bg.AdultRowToMolokai();
 				boatOnOahu = false;
@@ -169,7 +169,7 @@ public class Boat {
 
 	static void childItinerary() {
 		l.acquire();
-		while (aKnownOnOahu + cKnownOnOahu + waiting.size() > 0) {
+		while (aKnownOnOahu + cKnownOnOahu > 0 && waiting.isEmpty()) {
 			if(cKnownOnMolokai + cKnownOnOahu + waiting.size() < 2) {
 				//break if there are less than 2 children in the system to avoid infinite looping
 				break;
@@ -181,7 +181,7 @@ public class Boat {
 					cKnownOnMolokai++;
 					KThread.currentThread().setName("Child On Molokai");
 					boatOnOahu = false;
-					waiting.remove(KThread.currentThread());
+					waiting.clear();
 					//cWaitingOnMolokai.sleep();
 				}
 				else {
@@ -212,7 +212,7 @@ public class Boat {
 				aWaitingOnOahu.wake();
 				//cWaitingOnMolokai.sleep();
 			} 
-			else if (waiting.size() == 0) {
+			else if (waiting.isEmpty()) {
 				if(cKnownOnOahu == 1) {
 					//if this thread is the only child on Oahu, wake an adult, if any
 					if(aKnownOnOahu > 0) {
@@ -249,7 +249,7 @@ public class Boat {
 				bg.ChildRideToMolokai();
 				KThread.currentThread().setName("Child On Molokai");
 				waiting.firstElement().setName("Child On Molokai");
-				waiting.remove(waiting.firstElement());
+				waiting.clear();
 				cWaitingInBoat.wake();
 				cWaitingOnMolokai.wake();
 				aWaitingOnMolokai.wake();
