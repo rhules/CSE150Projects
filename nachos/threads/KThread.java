@@ -191,8 +191,13 @@ public class KThread {
 		Lib.assertTrue(toBeDestroyed == null);
 		toBeDestroyed = currentThread;
 
-
 		currentThread.status = statusFinished;
+		
+		KThread thread = currentThread.waitList.nextThread();
+		if (thread != null) {
+			thread.ready();
+			thread = currentThread.waitList.nextThread();
+		}
 
 		sleep();
 	}
@@ -282,27 +287,44 @@ public class KThread {
 	// public Lock joinLock = new Lock();
 	// public Condition2 joinCond = new Condition2(joinLock);
 
+
+	// queue for threads waiting to be joined;
+	private ThreadQueue waitList;
+	// private int count = 0; // strictly control/allow join() to be called only once; 
+	
 	public void join() {
 		Lib.debug(dbgThread, "Joining to thread: " + toString());
 		Lib.assertTrue(this != currentThread);
-
-		int tempCount = count + 1;
-
-		// check to see if this method is already called
-		if (tempCount != 1) {
-			return;
+		
+		// since we have this.status (status of thread)
+		// we'll name machine status to machineStatus
+		boolean machineStatus = Machine.interrupt().disable();
+		
+		if (this.status != 4) 
+		{
+				waitList.waitForAccess(currentThread);
+				KThread.sleep();
 		}
-
-		boolean status = Machine.interrupt().disable();
-
-		waitList.acquire(this);
-		waitList.waitForAccess(currentThread);
-
-		// let current thread sleep
-		currentThread.sleep();
-
-		// restore interrupts
-		Machine.interrupt().restore(status);
+		
+		Machine.interrupt().restore(machineStatus);
+		
+//		int tempCount = count + 1;
+//
+//		// check to see if this method is already called
+//		if (tempCount != 1) {
+//			return;
+//		}
+//
+//		boolean status = Machine.interrupt().disable();
+//
+//		waitList.acquire(this);
+//		waitList.waitForAccess(currentThread);
+//
+//		// let current thread sleep
+//		KThread.sleep();
+//
+//		// restore interrupts
+//		Machine.interrupt().restore(status);
 
 	}
 
@@ -466,11 +488,6 @@ public class KThread {
 	private int id = numCreated++;
 	/** Number of times the KThread constructor was called. */
 	private static int numCreated = 0;
-
-
-	// queue for threads waiting to be joined;
-	private ThreadQueue waitList = null;
-	private int count = 0; // strictly control/allow join() to be called only once; 
 
 	private static ThreadQueue readyQueue = null;
 	private static KThread currentThread = null;
