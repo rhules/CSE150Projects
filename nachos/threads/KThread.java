@@ -193,11 +193,11 @@ public class KThread {
 
 		currentThread.status = statusFinished;
 
-		//		KThread thread = currentThread.waitList.nextThread();
-		//		if (thread != null) {
-		//			thread.ready();
-		//			thread = currentThread.waitList.nextThread();
-		//		}
+		KThread thread = currentThread.waitList.nextThread();
+		if (thread != null) {
+			thread.ready();
+			thread = currentThread.waitList.nextThread();
+		}
 
 		sleep();
 	}
@@ -314,7 +314,7 @@ public class KThread {
 				waitList.acquire(this);
 				waitList.waitForAccess(currentThread);
 				KThread.sleep();
-			
+
 			}
 
 		}
