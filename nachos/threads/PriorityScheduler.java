@@ -132,13 +132,13 @@ public class PriorityScheduler extends Scheduler {
 	 */
 	protected class PriorityQueue extends ThreadQueue {
 
-		protected LinkedList<ThreadState> queue = new LinkedList<ThreadState>();
+		protected LinkedList<ThreadState> queue; 
 		
 		public ThreadState item = null;
 
 		PriorityQueue(boolean transferPriority) {
 			this.transferPriority = transferPriority;
-//			queue = new LinkedList<ThreadState>();
+			queue = new LinkedList<ThreadState>();
 		}
 
 		public void waitForAccess(KThread thread) {
@@ -226,10 +226,16 @@ public class PriorityScheduler extends Scheduler {
 		 *
 		 * @param thread
 		 *            the thread this state belongs to.
+		 *           
 		 */
+		
+		protected LinkedList<LinkedList> queueList;
+		
 		public ThreadState(KThread thread) {
 			this.thread = thread;
-
+			
+			queueList = new LinkedList <LinkedList>();
+			
 			setPriority(priorityDefault);
 		}
 
@@ -251,9 +257,11 @@ public class PriorityScheduler extends Scheduler {
 			// implement me
 			
 			effectivePriority = priority;
-//			
-//			System.out.println(effectivePriority);
 			
+			for(LinkedList Pqueue : queueList) {
+				for(ThreadState threadstate : Pqueue.queue)
+			
+			}
 			return effectivePriority;
 		}
 		
