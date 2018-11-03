@@ -151,12 +151,7 @@ public class PriorityScheduler extends Scheduler {
 			if (queue.isEmpty()) {
 				return null;
 			} else {
-//				if(pickNextThread().thread !=null){
-					return pickNextThread().thread;
-//				}
-//				else{ 
-//					return null;
-//				}
+				return pickNextThread().thread;
 			}
 		}
 
@@ -230,6 +225,7 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public int getEffectivePriority() {
 			// implement me
+			
 			//this is for no priority donation
 			effectivePriority = priority;
 			return effectivePriority;
@@ -263,22 +259,19 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public void waitForAccess(PriorityQueue waitQueue) {
 			// implement me
-//			// must disable interrupt
-//			boolean result = Machine.interrupt().disable();
-//			// add to the queue if not already on the thread
-//			if (!waitQueue.queue.contains(this)) {
-//				waitQueue.queue.add(this);
-//			}
-//			// order of effective priorities has now changed
-//			getEffectivePriority();
-//			// get back to original state
-//			Machine.interrupt().restore(result);
-//		    Lib.assertTrue(Machine.interrupt().disabled());
-//			waitQueue.transferPriority = true;
-			//from round robin
+			
+			//must disable interrupt
+			boolean result = Machine.interrupt().disable();
+			// add to the queue if not already on the thread
+			if (!waitQueue.queue.contains(this)) {
+				waitQueue.queue.add(this);
+			}
+			// order of effective priorities has now changed
+			getEffectivePriority();
+			// get back to original state
+			Machine.interrupt().restore(result);
 		    Lib.assertTrue(Machine.interrupt().disabled());
-		       
-		    waitQueue.queue.add(this);
+			waitQueue.transferPriority = true;
 		}
 
 		/**
@@ -292,10 +285,14 @@ public class PriorityScheduler extends Scheduler {
 		 * @see nachos.threads.ThreadQueue#nextThread
 		 */
 		public void acquire(PriorityQueue waitQueue) {
-			//from round robin
-		    Lib.assertTrue(Machine.interrupt().disabled());
-		    
-		    Lib.assertTrue(waitQueue.queue.isEmpty());
+			//implement me
+			
+		    Lib.assertTrue(Machine.interrupt().disabled());			
+			getEffectivePriority();
+
+			if(waitQueue.queue.contains(waitQueue)){
+				waitQueue.queue.remove(waitQueue);
+			}
 		}
 
 		/** The thread with which this object is associated. */
