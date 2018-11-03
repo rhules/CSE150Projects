@@ -196,6 +196,7 @@ public class KThread {
 		KThread thread = currentThread.waitList.nextThread();
 		if (thread != null) {
 			thread.ready();
+			thread.waitList.acquire(thread);
 			thread = currentThread.waitList.nextThread();
 		}
 
@@ -306,19 +307,14 @@ public class KThread {
 			waitList = ThreadedKernel.scheduler.newThreadQueue(true);
 		}
 
-		if (this.status == statusFinished) {
+		if (this.status == 4) {
 			return;
 		} else {
-
-			while (currentThread != this) {
-				waitList.acquire(this);
-				waitList.waitForAccess(currentThread);
-				KThread.sleep();
-
-			}
-
+			
+			waitList.acquire(this);
+			waitList.waitForAccess(currentThread);
+			KThread.sleep();
 		}
-
 
 		Machine.interrupt().restore(machineStatus);
 
