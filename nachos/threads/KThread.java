@@ -193,6 +193,9 @@ public class KThread {
 
 		currentThread.status = statusFinished;
 
+		if (waitList == null)
+			waitList = ThreadedKernel.scheduler.newThreadQueue(true);
+		
 		KThread thread = currentThread.waitList.nextThread();
 		if (thread != null) {
 			thread.ready();
@@ -290,7 +293,7 @@ public class KThread {
 
 
 	// queue for threads waiting to be joined;
-	private ThreadQueue waitList = null;
+	private static ThreadQueue waitList = null;
 	// private int count = 0; // strictly control/allow join() to be called only once; 
 
 	public void join() {
