@@ -17,10 +17,12 @@ public class Communicator {
 	
 	Condition2 activeSpeaker;
 	Condition2 activeListener;
-	//Condition2 listenerQueue;
 	Condition2 speakerInQueue;
+	//Condition2 listenerQueue;
+	//Condition2 speakerQueue;
 	int waitingListener = 0; 
 	int waitingSpeaker = 0;
+	boolean speakerReady = false;
 	
 	int getWord;
 	boolean wordReady = false;
@@ -48,7 +50,8 @@ public class Communicator {
     	
     	lock.acquire();
     	waitingSpeaker++;
-		while(waitingSpeaker == 0 || wordReady){ 
+		speakerReady = true;
+		while(waitingSpeaker == 0 || wordReady){  //sleep if no word
 			
 			activeSpeaker.sleep();
 		}
@@ -56,11 +59,12 @@ public class Communicator {
 		
 		
 		
-		getWord = word;
+		getWord = word; // recieved word
 		wordReady = true;
-		activeListener.wake();
-		speakerInQueue.sleep();
+		activeListener.wake(); //ready to listen
+		speakerInQueue.sleep(); 
 		waitingSpeaker--;
+		speakerReady = false;
 		
 		lock.release();
     }
@@ -79,9 +83,9 @@ public class Communicator {
 			activeListener.sleep();
 		
 		int gotWord = getWord;
-		wordReady = false;
+		wordReady = false; //word was listened to
 		
-		activeSpeaker.wake();
+		activeSpeaker.wake();  //wake up after giving up word
 		speakerInQueue.wake();
 		
 		lock.release();
