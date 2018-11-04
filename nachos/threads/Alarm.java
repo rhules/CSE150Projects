@@ -59,7 +59,7 @@ public class Alarm {
 			}
 
 		}
-		
+
 		// restore interrupts
 		Machine.interrupt().restore(status);
 
@@ -89,52 +89,51 @@ public class Alarm {
 	//	
 	// 	KThread.currentThread().yield();
 
-}
 
-/**
- * Put the current thread to sleep for at least <i>x</i> ticks,
- * waking it up in the timer interrupt handler. The thread must be
- * woken up (placed in the scheduler ready set) during the first timer
- * interrupt where
- *
- * <p><blockquote>
- * (current time) >= (WaitUntil called time)+(x)
- * </blockquote>
- *
- * @param	x	the minimum number of clock ticks to wait.
- *
- * @see	nachos.machine.Timer#getTime()
- */
-public void waitUntil(long x) {
-	// for now, cheat just to get something working (busy waiting is bad)
-	// given; 
-	long wakeTime = Machine.timer().getTime() + x;
+	/**
+	 * Put the current thread to sleep for at least <i>x</i> ticks,
+	 * waking it up in the timer interrupt handler. The thread must be
+	 * woken up (placed in the scheduler ready set) during the first timer
+	 * interrupt where
+	 *
+	 * <p><blockquote>
+	 * (current time) >= (WaitUntil called time)+(x)
+	 * </blockquote>
+	 *
+	 * @param	x	the minimum number of clock ticks to wait.
+	 *
+	 * @see	nachos.machine.Timer#getTime()
+	 */
+	public void waitUntil(long x) {
+		// for now, cheat just to get something working (busy waiting is bad)
+		// given; 
+		long wakeTime = Machine.timer().getTime() + x;
 
-	// disable interrupts; 
-	boolean status = Machine.interrupt().disable();
+		// disable interrupts; 
+		boolean status = Machine.interrupt().disable();
 
-	// acquire the lock;
-	// lock.acquire();
+		// acquire the lock;
+		// lock.acquire();
 
-	wakeAlarmThread thread = new wakeAlarmThread(wakeTime, KThread.currentThread());
+		wakeAlarmThread thread = new wakeAlarmThread(wakeTime, KThread.currentThread());
 
-	// add the thread to the waitQueue;
-	waitQueue.add(thread);
+		// add the thread to the waitQueue;
+		waitQueue.add(thread);
 
-	// release lock and let thread sleep;
-	// lock.release();
-	KThread.sleep();
+		// release lock and let thread sleep;
+		// lock.release();
+		KThread.sleep();
 
-	// restore interrupts;
-	Machine.interrupt().restore(status);
+		// restore interrupts;
+		Machine.interrupt().restore(status);
 
-	// KThread.yield();
-}
+		// KThread.yield();
+	}
 
-private Lock lock;
-// private LinkedList<Long> sQueue;
-private LinkedList<wakeAlarmThread> waitQueue;
-// 	private wakeAlarmThread thread;
+	private Lock lock;
+	// private LinkedList<Long> sQueue;
+	private LinkedList<wakeAlarmThread> waitQueue;
+	// 	private wakeAlarmThread thread;
 
 
 }
