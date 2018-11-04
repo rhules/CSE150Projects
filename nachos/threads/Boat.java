@@ -57,8 +57,8 @@ public class Boat {
 		 */
 		cKnownOnMolokai = 0;
 		aKnownOnMolokai = 0;
-		cKnownOnOahu = children;
-		aKnownOnOahu = adults;
+		cKnownOnOahu = 0;
+		aKnownOnOahu = 0;
 
 		// Create threads here. See section 3.4 of the Nachos for Java
 		// Walkthrough linked from the projects page.
@@ -71,7 +71,6 @@ public class Boat {
 		for (int i = adults; i > 0; i--) {
 			KThread temp = new KThread(a);
 			temp.setName("Adult on Oahu");
-			aKnownOnOahu++;
 			temp.fork();
 		}
 
@@ -83,7 +82,6 @@ public class Boat {
 		for (int i = children; i > 0; i--) {
 			KThread temp = new KThread(c);
 			temp.setName("Child on Oahu");
-			cKnownOnOahu++;
 			temp.fork();
 		}
 
@@ -103,6 +101,7 @@ public class Boat {
 		 * show that it is synchronized. For example: bg.AdultRowToMolokai(); indicates
 		 * that an adult has rowed the boat across to Molokai
 		 */
+		aKnownOnOahu++;
 		l.acquire();
 		while (aKnownOnOahu + cKnownOnOahu > 0 && waiting.isEmpty()) {
 			if (!boatOnOahu) {
@@ -168,6 +167,7 @@ public class Boat {
 	}
 
 	static void childItinerary() {
+		cKnownOnOahu++;
 		l.acquire();
 		while (aKnownOnOahu + cKnownOnOahu > 0 && waiting.isEmpty()) {
 			if(cKnownOnMolokai + cKnownOnOahu + waiting.size() < 2) {
