@@ -235,7 +235,7 @@ public class PriorityScheduler extends Scheduler {
 		 *            the thread this state belongs to.
 		 *           
 		 */
-		
+		protected int effectivePriority;
 		
 		
 		public ThreadState(KThread thread) {
@@ -244,6 +244,9 @@ public class PriorityScheduler extends Scheduler {
 			queueList = new LinkedList <PriorityQueue>();
 			
 			setPriority(priorityDefault);
+			
+			
+			effectivePriority = priorityMinimum;
 		}
 
 		/**
@@ -350,9 +353,7 @@ public class PriorityScheduler extends Scheduler {
 			
 			getEffectivePriority();
 			//If already contains remove
-//			if(queueList.contains(waitQueue)){
-//				queueList.remove(waitQueue);
-//			}
+
 //		    Lib.assertTrue(waitQueue.isEmpty());
 		}
 
@@ -361,8 +362,7 @@ public class PriorityScheduler extends Scheduler {
 		/** The priority of the associated thread. */
 		protected int priority;
 		
-		protected int effectivePriority= priorityMinimum;
-		
 		protected LinkedList<PriorityQueue> queueList;
+		
 	}
 }
