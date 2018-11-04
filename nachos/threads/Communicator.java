@@ -78,7 +78,7 @@ public class Communicator {
     public int listen() {
     	lock.acquire();
 		
-		activeListener.wake();
+		//activeListener.wake();
 		while(waitingSpeaker == 0 || !wordReady)
 			activeListener.sleep();
 		
