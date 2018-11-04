@@ -350,6 +350,10 @@ public class PriorityScheduler extends Scheduler {
 			
 			getEffectivePriority();
 			
+			//If already contains remove
+			if(queueList.contains(waitQueue)==true){
+				queueList.remove(waitQueue);
+			}
 //		    Lib.assertTrue(waitQueue.isEmpty());
 		}
 
