@@ -339,7 +339,11 @@ public class PriorityScheduler extends Scheduler {
 			
 			
 			
-			//Lib.assertTrue(waitQueue.item == null);	    
+			//Lib.assertTrue(waitQueue.item == null);	
+			
+			if(queueList.contains(waitQueue)){
+				queueList.add(waitQueue);
+			}
 			
 			//set new queue owner 
 			waitQueue.item = this;
