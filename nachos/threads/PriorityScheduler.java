@@ -154,7 +154,7 @@ public class PriorityScheduler extends Scheduler {
 		public KThread nextThread() {
 			Lib.assertTrue(Machine.interrupt().disabled());
 			// implement me
-			if (transferPriority && this.item != null) {
+			if ( this.item != null&& transferPriority==true) {
 				this.item.getEffectivePriority();
 			}
 			
@@ -263,7 +263,7 @@ public class PriorityScheduler extends Scheduler {
 		public int getEffectivePriority() {
 			// implement me
 			
-			effectivePriority = priority;
+			effectivePriority = getPriority();
 			
 			for(PriorityQueue Pqueue : queueList) {
 				for(ThreadState tState : Pqueue.queue){
@@ -340,20 +340,19 @@ public class PriorityScheduler extends Scheduler {
 			
 			
 			//Lib.assertTrue(waitQueue.item == null);	
-			
-// 			if(queueList.contains(waitQueue)!= true){
-// 				queueList.add(waitQueue);
-// 			}
+			//If not contains add
+//			if(!queueList.contains(waitQueue)){
+//				queueList.add(waitQueue);
+//			}
 			
 			//set new queue owner 
 			waitQueue.item = this;
 			
 			getEffectivePriority();
-			
 			//If already contains remove
-// 			if(queueList.contains(waitQueue)==true){
-// 				queueList.remove(waitQueue);
-// 			}
+//			if(queueList.contains(waitQueue)){
+//				queueList.remove(waitQueue);
+//			}
 //		    Lib.assertTrue(waitQueue.isEmpty());
 		}
 
