@@ -341,9 +341,9 @@ public class PriorityScheduler extends Scheduler {
 			
 			//Lib.assertTrue(waitQueue.item == null);	
 			
-			if(queueList.contains(waitQueue)!= true){
-				queueList.add(waitQueue);
-			}
+// 			if(queueList.contains(waitQueue)!= true){
+// 				queueList.add(waitQueue);
+// 			}
 			
 			//set new queue owner 
 			waitQueue.item = this;
@@ -351,9 +351,9 @@ public class PriorityScheduler extends Scheduler {
 			getEffectivePriority();
 			
 			//If already contains remove
-			if(queueList.contains(waitQueue)==true){
-				queueList.remove(waitQueue);
-			}
+// 			if(queueList.contains(waitQueue)==true){
+// 				queueList.remove(waitQueue);
+// 			}
 //		    Lib.assertTrue(waitQueue.isEmpty());
 		}
 
