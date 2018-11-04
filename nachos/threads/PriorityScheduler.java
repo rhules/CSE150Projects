@@ -188,7 +188,14 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		protected ThreadState pickNextThread() {
 			// implement me
-
+			//checks for not nulls and removes when picking next thread
+			if(this.item!=null && transferPriority ==true){
+				this.item.queueList.remove(this);
+				//Above removes from queue of PriorityQueues
+				//Getting priority
+				this.item.getEffectivePriority();
+			}
+			
 			// check to see if queue is empty
 			if (queue.peek() == null) {
 				return null;
@@ -229,12 +236,12 @@ public class PriorityScheduler extends Scheduler {
 		 *           
 		 */
 		
-		protected LinkedList<LinkedList> queueList;
+		
 		
 		public ThreadState(KThread thread) {
 			this.thread = thread;
 			
-			queueList = new LinkedList <LinkedList>();
+			queueList = new LinkedList <PriorityQueue>();
 			
 			setPriority(priorityDefault);
 		}
@@ -258,9 +265,15 @@ public class PriorityScheduler extends Scheduler {
 			
 			effectivePriority = priority;
 			
-			for(LinkedList Pqueue : queueList) {
-				for(ThreadState threadstate : Pqueue.queue)
-			
+			for(PriorityQueue Pqueue : queueList) {
+				for(ThreadState tState : Pqueue.queue){
+						if(Pqueue.transferPriority){
+							int pr = tState.getEffectivePriority();
+							if(pr > effectivePriority){
+								effectivePriority = pr;
+							}
+						}
+				}
 			}
 			return effectivePriority;
 		}
@@ -279,6 +292,8 @@ public class PriorityScheduler extends Scheduler {
 			} else {
 				this.priority = priority;
 			}
+			//Used becasue of possible donation happening
+			getEffectivePriority();
 		}
 
 		/**
@@ -329,7 +344,7 @@ public class PriorityScheduler extends Scheduler {
 			//set new queue owner 
 			waitQueue.item = this;
 			
-			//acquireEffectivePriority
+			getEffectivePriority();
 			
 //		    Lib.assertTrue(waitQueue.isEmpty());
 		}
@@ -339,6 +354,8 @@ public class PriorityScheduler extends Scheduler {
 		/** The priority of the associated thread. */
 		protected int priority;
 		
-		protected int effectivePriority;
+		protected int effectivePriority= priorityMinimum;
+		
+		protected LinkedList<PriorityQueue> queueList;
 	}
 }
