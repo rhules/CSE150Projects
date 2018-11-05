@@ -342,7 +342,7 @@ public class PriorityScheduler extends Scheduler {
 			
 			
 			
-			//Lib.assertTrue(waitQueue.item == null);	
+			Lib.assertTrue(waitQueue.item == null);	
 			//If not contains add
 //			if(!queueList.contains(waitQueue)){
 //				queueList.add(waitQueue);
