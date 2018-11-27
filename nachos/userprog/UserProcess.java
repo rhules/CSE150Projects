@@ -29,15 +29,15 @@ public class UserProcess {
 		pageTable = new TranslationEntry[numPhysPages];
 		pID = UserKernel.gPID++;
 		children = new Vector<Integer>();
-		for (int i=0; i<numPhysPages; i++)
+		for (int i=0; i<numPhysPages; i++) 
 			pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
-	}
 	
 	// supports up tp 16 files;
 	openFile = new OpenFile[16];
 		
 	openFile[0] = UserKernel.console.openForReading();
 	openFile[1] = UserKernel.console.openForWriting();
+	}
 	
 	//Allocate a new process with a parent
 	
@@ -587,7 +587,14 @@ public class UserProcess {
 		switch (syscall) {
 		case syscallHalt:
 			return handleHalt();
-
+		case syscallExit:
+			exit(a0);
+			break;
+		case syscallExec:
+			//return exec(a0, a1);
+			break;
+		case syscallJoin:
+			return join(a0, a1);
 
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
