@@ -32,7 +32,7 @@ public class UserProcess {
 		for (int i=0; i<numPhysPages; i++) 
 			pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
 	
-	// supports up tp 16 files;
+	// supports up to 16 files;
 	openFile = new OpenFile[16];
 		
 	openFile[0] = UserKernel.console.openForReading();
@@ -587,6 +587,16 @@ public class UserProcess {
 		switch (syscall) {
 		case syscallHalt:
 			return handleHalt();
+		
+		case syscallCreate:
+			return handleCreat(a0);
+			
+		case syscallOpen:
+			return handleOpen(a0);
+			
+		case syscallClose:
+			return handleClose(a0);
+
 		case syscallExit:
 			exit(a0);
 			break;
