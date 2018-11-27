@@ -33,6 +33,12 @@ public class UserProcess {
 			pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
 	}
 	
+	// supports up tp 16 files;
+	openFile = new OpenFile[16];
+		
+	openFile[0] = UserKernel.console.openForReading();
+	openFile[1] = UserKernel.console.openForWriting();
+	
 	//Allocate a new process with a parent
 	
 
@@ -429,7 +435,77 @@ public class UserProcess {
 		return 0;
 	}
 
+	
+		private int searchSpace() {
+		int fileDescriptor = -1;
+		
+		// support 16 files max;
+		for (int i = 0; i < 16; i++) 
+		{
+			if(openFile[i] == null) 
+			{
+				fileDescriptor = i;
+				return fileDescriptor;
+			}
+		}
+		return -1;		
+	}
 
+	private int handleCreat(int address) {
+
+		// read file name;
+		String file = readVirtualMemoryString(address, 256);
+
+		// if file does not exist, create failed;
+		if (file == null) 
+		{
+			return -1;
+		}
+		
+		// Search for empty space; 
+		int fileDescriptor = searchSpace();
+		
+		/* if searchSpace returns -1, meaning it reached
+		   16 max opening file. */
+		if (fileDescriptor == -1) {
+			return -1;
+		}
+		
+		// create;
+		else {	
+			openFile [fileDescriptor] = ThreadedKernel.fileSystem.open(file, true);	
+		}
+
+		// return fileDescriptor;
+		return fileDescriptor;
+
+	}
+
+	
+	private int handleOpen(int address) {
+		String file = readVirtualMemoryString(address, 256);
+		
+		// cannot open file does not exist. 
+		if (file == null) {
+			return -1;
+		}
+		
+		// search for empty space;
+		int fileDescriptor = searchSpace();
+		
+		/* if searchSpace returns -1, meaning it reached
+		   16 max opening file. */
+		if (fileDescriptor == -1) {
+			return -1; 
+		}
+		
+		else {
+			// the value of create should be false since we are only handling open right here;
+			openFile[fileDescriptor] = ThreadedKernel.fileSystem.open(file, false);
+			return fileDescriptor;
+		}		
+	}
+	
 	private static final int
 	syscallHalt = 0,
 	syscallExit = 1,
