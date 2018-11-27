@@ -80,13 +80,18 @@ public class UserProcess {
 	 * @return	-1 on error, pID otherwise.
 	 */
 	
-	public int exec(String file, int argc, String[] argv) {
-		if(!file.endsWith(".coff")||!load(file, argv)||argc < 0) {
+	public int exec(int address) {
+		String[] av = new String[argc];
+		//int transferred = readVirtualMemory(argv, (byte[])av, 0, argc);
+		String file = readVirtualMemoryString(address, 256);
+		
+		// cannot open file does not exist. 
+		if(file == null||!file.endsWith(".coff")||!load(file, av)||argc < 0) {
 			return -1;
 		}
 		
 		UserProcess temp = new UserProcess();
-		temp.execute(file, argv);
+		temp.execute(file, av);
 		temp.manageParent(this.pID, true);
 		
 		return temp.pID;
@@ -610,8 +615,7 @@ public class UserProcess {
 			exit(a0);
 			break;
 		case syscallExec:
-			//return exec(a0, a1);
-			break;
+			return exec(a0);
 		case syscallJoin:
 			return join(a0, a1);
 
