@@ -506,6 +506,43 @@ public class UserProcess {
 		}		
 	}
 	
+	//	private int handleRead(int fileDescriptor, int addr, int l) {
+//		if (fileDescriptor > 15 || fileDescriptor < 0) {
+//			return -1;
+//		}
+//		
+//		else if(openFile[fileDescriptor] == null) {
+//			return -1;
+//		}
+//		
+//		
+//		
+//		return -1;
+//	}
+//	
+	
+	
+	private int handleClose(int fileDescriptor) {
+		
+		// add comments later;
+		
+		if (fileDescriptor > 15 || fileDescriptor < 0) {
+			return -1;
+		}
+		
+		else if (openFile[fileDescriptor] == null) {
+			return -1;
+		}
+		
+		openFile[fileDescriptor].close();
+		openFile[fileDescriptor] = null;
+		
+		return 0;
+
+	}
+	
+
+	
 	private static final int
 	syscallHalt = 0,
 	syscallExit = 1,
