@@ -436,14 +436,13 @@ public class UserProcess {
 	}
 
 	
-		private int searchSpace() {
+	private int searchSpace() {
 		int fileDescriptor = -1;
 		
 		// support 16 files max;
 		for (int i = 0; i < 16; i++) 
 		{
-			if(openFile[i] == null) 
-			{
+			if(openFile[i] == null) {
 				fileDescriptor = i;
 				return fileDescriptor;
 			}
@@ -506,20 +505,27 @@ public class UserProcess {
 		}		
 	}
 	
-	//	private int handleRead(int fileDescriptor, int addr, int l) {
-//		if (fileDescriptor > 15 || fileDescriptor < 0) {
-//			return -1;
-//		}
-//		
-//		else if(openFile[fileDescriptor] == null) {
-//			return -1;
-//		}
-//		
-//		
-//		
-//		return -1;
-//	}
-//	
+	private int handleRead(int fileDescriptor, int addr, int l) {
+		if (fileDescriptor > 15 || fileDescriptor < 0) {
+			return -1;
+		}
+		
+		else if(openFile[fileDescriptor] == null) {
+			return -1;
+		}
+		
+		byte buffer[] = new byte[l];
+		
+		int readNum = openFile[fileDescriptor].read(buffer, 0, l);
+		
+		// couldn't read data;
+		if(readNum <= 0) {
+			return 0;
+		}
+		
+		int writeNum = writeVirtualMemory(addr, buffer);
+		return writeNum;
+	}	
 	
 	
 	private int handleClose(int fileDescriptor) {
@@ -596,6 +602,9 @@ public class UserProcess {
 			
 		case syscallClose:
 			return handleClose(a0);
+				
+		case syscallRead:
+			return handleRead(a0, a1, a2);
 
 		case syscallExit:
 			exit(a0);
