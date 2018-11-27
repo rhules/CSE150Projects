@@ -626,6 +626,10 @@ public class UserProcess {
 		}
 	}
 
+	
+	protected OpenFile[] openFile; 
+
+	
 	/** The program being run by this process. */
 	protected Coff coff;
 
