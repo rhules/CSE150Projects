@@ -6,6 +6,7 @@ import nachos.userprog.*;
 
 import java.io.EOFException;
 import java.util.Vector;
+import java.util.Arrays;
 
 /**
  * Encapsulates the state of a user process that is not contained in its
@@ -82,7 +83,7 @@ public class UserProcess {
 	
 	public int exec(int address) {
 		String[] av = new String[argc];
-		//int transferred = readVirtualMemory(argv, (byte[])av, 0, argc);
+		//int transferred = readVirtualMemory(argv, av.getBytes(), 0, argc);
 		String file = readVirtualMemoryString(address, 256);
 		
 		// cannot open file does not exist. 
