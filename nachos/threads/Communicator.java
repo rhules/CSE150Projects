@@ -46,10 +46,16 @@ public class Communicator {
      *
      * @param	word	the integer to transfer.
      */
+	 
     public void speak(int word) {
-    	
+    	 /**
+     * Wait for a thread to speak through this communicator, and then return
+     * the <i>word</i> that thread passed to <tt>speak()</tt>.
+     *
+     * @return	the integer transferred.
+     */    
     	lock.acquire();
-    	waitingSpeaker++;
+    	waitingSpeaker++; //add one speaker
 		speakerReady = true;
 		while(waitingSpeaker == 0 || wordReady){  //sleep if no word
 			
@@ -60,7 +66,7 @@ public class Communicator {
 		
 		
 		getWord = word; // recieved word
-		wordReady = true;
+		wordReady = true; // check if word is ready
 		activeListener.wake(); //ready to listen
 		speakerInQueue.sleep(); 
 		waitingSpeaker--;
@@ -78,15 +84,14 @@ public class Communicator {
     public int listen() {
     	lock.acquire();
 		
-		//activeListener.wake();
-		while(waitingSpeaker == 0 || !wordReady)
+		while(waitingSpeaker == 0 || !wordReady) 
 			activeListener.sleep();
 		
 		int gotWord = getWord;
 		wordReady = false; //word was listened to
 		
 		activeSpeaker.wake();  //wake up after giving up word
-		speakerInQueue.wake();
+		speakerInQueue.wake(); //wake up any other waiting speaker
 		
 		lock.release();
 		return gotWord;
