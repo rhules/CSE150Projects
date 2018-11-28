@@ -538,19 +538,24 @@ public class UserProcess {
 		
 		// add comments later;
 		
+		// should not be greater than 15 or less than 0;
 		if (fileDescriptor > 15 || fileDescriptor < 0) {
 			return -1;
 		}
 		
+		// or if the file does not exist, error;
 		else if (openFile[fileDescriptor] == null) {
 			return -1;
 		}
 		
+		else {
+		
 		openFile[fileDescriptor].close();
 		openFile[fileDescriptor] = null;
 		
+		}
+		
 		return 0;
-
 	}
 	
 
