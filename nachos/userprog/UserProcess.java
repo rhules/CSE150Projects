@@ -558,6 +558,25 @@ public class UserProcess {
 		return 0;
 	}
 	
+	private int handleUnlink(int address) {
+		// use for removing file;
+		
+		// first get the name of the file;
+		String file = readVirtualMemoryString(address, 256);
+		
+		// if the file does not exist, no need to delete;
+		if (file == null) {
+			return 0;
+		}
+		
+		if (ThreadedKernel.fileSystem.remove(file)) {
+			return 0;	// deleted successfully;
+		}
+		
+		else {
+			return -1;
+		}
+	}
 
 	
 	private static final int
@@ -611,11 +630,17 @@ public class UserProcess {
 		case syscallOpen:
 			return handleOpen(a0);
 			
-		case syscallClose:
-			return handleClose(a0);
-				
 		case syscallRead:
 			return handleRead(a0, a1, a2);
+			
+		case syscallWrite:
+			return handleWrite(a0, a1, a2);
+			
+		case syscallClose:
+			return handleClose(a0);
+			
+		case syscallUnlink:
+			return handleUnlink(a0);
 
 		case syscallExit:
 			exit(a0);
