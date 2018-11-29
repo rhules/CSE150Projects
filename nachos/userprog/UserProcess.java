@@ -533,6 +533,41 @@ public class UserProcess {
 		return writeNum;
 	}	
 	
+	private int handleWrite(int fileDescriptor, int addr, int l) {
+		// write data from virtual memory address into the file;
+
+		// should not be greater than 15 or less than 0;
+		if (fileDescriptor > 15 || fileDescriptor < 0) {
+			return -1;
+		}
+		
+		else if(openFile[fileDescriptor] == null) {
+			return -1;
+		}
+		
+		byte buffer[] = new byte[l];
+		
+		// store data into the temp buffer table;
+		int readNum = readVirtualMemory(addr, buffer);
+		
+		if (readNum <= 0) {
+			// no data read;
+			return 0;
+		}
+		
+		// now write the data in;
+		int writeNum = openFile[fileDescriptor].write(buffer, 0, l);
+		
+		if (writeNum < l) {
+			// error occured when writing, return error;
+			return -1;
+		}
+	
+		// return written; 
+		return writeNum;
+	}
+	
+	
 	
 	private int handleClose(int fileDescriptor) {
 		
@@ -557,6 +592,7 @@ public class UserProcess {
 		
 		return 0;
 	}
+	
 	
 	private int handleUnlink(int address) {
 		// use for removing file;
