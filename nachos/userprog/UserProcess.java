@@ -610,12 +610,24 @@ public class UserProcess {
 			return -1;
 		}
 
-		int fileIndex = searchFile(file);
+		OpenFile f;
+		int fileIndex = -1;		
+		
+		for (int i = 0; i < 16; i++) {
+			f = openFile[i];
+			if (f.getName().compareTo(file) == 0 && f != null) {
+				fileIndex = i;
+				break;
+			}
+		}
+		
+		
+		//int fileIndex = searchFile(file);
+		
 		// should not return anything other than -1;
 		if (fileIndex != -1) {
 			return -1;
 		}
-
 
 		if (ThreadedKernel.fileSystem.remove(file)) {
 			return 0;	// deleted successfully;
