@@ -607,15 +607,17 @@ public class UserProcess {
 		
 		// if the file does not exist, no need to delete;
 		if (file == null) {
-			return 0;
-		}
-		
-		int i = searchSpace();
-		
-		if (i != -1) {
 			return -1;
 		}
 		
+		int index = searchSpace();
+		
+		// should not return anything other than -1;
+		if (index != -1) {
+			return -1;
+		}
+		
+				
 		if (ThreadedKernel.fileSystem.remove(file)) {
 			return 0;	// deleted successfully;
 		}
