@@ -597,45 +597,22 @@ public class UserProcess {
 	private int handleUnlink(int address) {
 		// use for removing file;
 
-		// return -1 invalid address;
-		if (address < 0) {
-			return -1;
-		}
-
 		// first get the name of the file;
 		String file = readVirtualMemoryString(address, 256);
 
 		// if the file does not exist, no need to delete;
 		if (file == null) {
-			return -1;
-		}
-
-		OpenFile f;
-		int fileIndex = -1;		
-		
-		for (int i = 0; i < 16; i++) {
-			f = openFile[i];
-			if (f.getName().compareTo(file) == 0 && f != null) {
-				fileIndex = i;
-				break;
-			}
-		}
-		
-		
-		//int fileIndex = searchFile(file);
-		
-		// should not return anything other than -1;
-		if (fileIndex != -1) {
-			return -1;
+			return 0;
 		}
 
 		if (ThreadedKernel.fileSystem.remove(file)) {
 			return 0;	// deleted successfully;
 		}
 		
-		return -1;
+		else {
+			return -1;
+		}
 
-		
 	}
 
 	
