@@ -596,6 +596,11 @@ public class UserProcess {
 	
 	private int handleUnlink(int address) {
 		// use for removing file;
+		
+		// invalid virtual memory address;
+		if (address < 0) {
+			return -1;
+		}
 
 		// first get the name of the file;
 		String file = readVirtualMemoryString(address, 256);
