@@ -632,10 +632,10 @@ public class UserProcess {
 		if (ThreadedKernel.fileSystem.remove(file)) {
 			return 0;	// deleted successfully;
 		}
+		
+		return -1;
 
-		else {
-			return -1;
-		}
+		
 	}
 
 	
