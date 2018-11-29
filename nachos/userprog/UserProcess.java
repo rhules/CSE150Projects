@@ -598,24 +598,23 @@ public class UserProcess {
 		// use for removing file;
 
 		// return -1 invalid address;
-//		if (address < 0) {
-//			return -1;
-//		}
+		if (address < 0) {
+			return -1;
+		}
 
 		// first get the name of the file;
 		String file = readVirtualMemoryString(address, 256);
 
 		// if the file does not exist, no need to delete;
 		if (file == null) {
-			return 0;
+			return -1;
 		}
 
-		// int index = searchSpace();
-
+		int fileIndex = searchFile(file);
 		// should not return anything other than -1;
-//		if (index != -1) {
-//			return -1;
-//		}
+		if (fileIndex != -1) {
+			return -1;
+		}
 
 
 		if (ThreadedKernel.fileSystem.remove(file)) {
