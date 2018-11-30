@@ -27,3 +27,5 @@
 /ThreadedKernel.class
 /Boat$2.class
 /wakeAlarmThread.class
+/LotteryScheduler$LotteryQueue.class
+/LotteryScheduler$LotteryThreadState.class

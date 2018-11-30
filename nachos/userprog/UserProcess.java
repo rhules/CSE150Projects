@@ -83,7 +83,7 @@ public class UserProcess {
 	
 	public int exec(int address) {
 		String[] av = new String[argc];
-		//int transferred = readVirtualMemory(argv, av.getBytes(), 0, argc);
+		//readVirtualMemory(argv, av.getBytes(), 0, argc);
 		String file = readVirtualMemoryString(address, 256);
 		
 		// cannot open file does not exist. 
@@ -109,10 +109,17 @@ public class UserProcess {
 		if(status == -1) {
 			return 0;
 		}
-		else if(isChild(processID)) {
+		while(isChild(processID) && children.contains(processID)) {
 			Lib.assertTrue(this != UserKernel.currentProcess());
 			boolean machineStatus = Machine.interrupt().disable();
-			
+			if(status == 0) {
+				children.removeElement(processID);
+				return 1;
+			}
+			else {
+				
+			}
+			Machine.interrupt().restore(machineStatus);
 			return 1;
 		}
 		return -1;
@@ -132,6 +139,10 @@ public class UserProcess {
 
 	public void exit(int status) {
 		children.clear();
+		//close all open files
+		for(int i = 0; i < 16; i++) {
+			handleSyscall(8, i, 0, 0, 0);
+		}
 		
 	}
 	
