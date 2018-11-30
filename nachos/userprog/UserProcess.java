@@ -456,58 +456,44 @@ public class UserProcess {
 		return -1;		
 	}
 
-	private int handleCreat(int address) {
-
-		// read file name;
-		String file = readVirtualMemoryString(address, 256);
-
-		// if file does not exist, create failed;
-		if (file == null) 
-		{
-			return -1;
-		}
-		
-		// Search for empty space; 
-		int fileDescriptor = searchSpace();
-		
-		/* if searchSpace returns -1, meaning it reached
-		   16 max opening file. */
-		if (fileDescriptor == -1) {
-			return -1;
-		}
-		
-		// create;
-		else {	
-			openFile [fileDescriptor] = ThreadedKernel.fileSystem.open(file, true);	
-		}
-
-		// return fileDescriptor;
-		return fileDescriptor;
-
-	}
-
-	
 	private int handleOpen(int address) {
-		String file = readVirtualMemoryString(address, 256);
+
+		// invalid address check;
+		if (address < 0) {
+			return -1;
+		}
 		
+		String file = readVirtualMemoryString(address, 256);
+
 		// cannot open file does not exist. 
 		if (file == null) {
 			return -1;
 		}
-		
+
 		// search for empty space;
 		int fileDescriptor = searchSpace();
-		
+
 		/* if searchSpace returns -1, meaning it reached
 		   16 max opening file. */
 		if (fileDescriptor == -1) {
 			return -1; 
 		}
-		
+
 		else {
 			// the value of create should be false since we are only handling open right here;
-			openFile[fileDescriptor] = ThreadedKernel.fileSystem.open(file, false);
-			return fileDescriptor;
+			
+			OpenFile f = ThreadedKernel.fileSystem.open(file, false);
+			
+			if(f == null) {
+				return -1;
+			}
+			
+			else {
+			
+			//openFile[fileDescriptor] = ThreadedKernel.fileSystem.open(file, false);
+				openFile[fileDescriptor] = f;
+				return fileDescriptor;
+			}
 		}		
 	}
 	
