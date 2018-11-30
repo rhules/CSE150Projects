@@ -30,7 +30,7 @@ public class UserProcess {
 		int numPhysPages = Machine.processor().getNumPhysPages();
 		pageTable = new TranslationEntry[numPhysPages];
 		pID = UserKernel.gPID++;
-		children = new Vector<Integer>();
+		children = new LinkedList<UserProcess>();
 		for (int i=0; i<numPhysPages; i++) 
 			pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
 	
