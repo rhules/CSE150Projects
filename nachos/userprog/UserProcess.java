@@ -7,6 +7,7 @@ import nachos.userprog.*;
 import java.io.EOFException;
 import java.util.Vector;
 import java.util.Arrays;
+import java.util.LinkedList;
 
 /**
  * Encapsulates the state of a user process that is not contained in its
@@ -85,15 +86,34 @@ public class UserProcess {
 		String[] av = new String[argc];
 		//int transferred = readVirtualMemory(argv, av.getBytes(), 0, argc);
 		String file = readVirtualMemoryString(address, 256);
-		
+
 		// cannot open file does not exist. 
-		if(file == null||!file.endsWith(".coff")||!load(file, av)||argc < 0) {
+		if(file == null||!file.endsWith(".coff")||!load(file, av)||argc < 0 || argv > numPages * pageSize) {
 			return -1;
 		}
 		
-		UserProcess temp = new UserProcess();
-		temp.execute(file, av);
+		String[] arg = new String[argc];
+		
+		// store data into virtual memory;
+		for (int i = 0; i < argc; i++) {
+			byte[] argAddr = new byte[4];
+			
+			// read virtual memory address;
+			if (readVirtualMemory(argv + i * 4, argAddr) > 0) {
+				// reading byte by byte;
+				arg[i] = readVirtualMemoryString(Lib.bytesToInt(argAddr, 0), 256);
+			}
+		}
+
+		UserProcess temp = UserProcess.newUserProcess();
+		
+		// fail opening the file;
+		if (!temp.execute(file, arg)) {
+			return -1;
+		}
+		
 		temp.manageParent(this.pID, true);
+		this.children.add(temp);
 		
 		return temp.pID;
 	}
@@ -778,7 +798,8 @@ public class UserProcess {
 	protected final int stackPages = 8;
 	
 	//list of children
-	private static Vector<Integer> children;
+	//private static Vector<Integer> children;
+	protected LinkedList <UserProcess> children;
 
 	private int initialPC, initialSP;
 	private int argc, argv;
