@@ -456,6 +456,53 @@ public class UserProcess {
 		return -1;		
 	}
 
+	private int handleCreat(int address) {
+		
+		// invalid address;
+		if (address < 0) {
+			return -1;
+		}
+
+		// read file name;
+		String file = readVirtualMemoryString(address, 256);
+
+		// if file does not exist, create failed;
+		if (file == null) 
+		{
+			return -1;
+		}
+
+		// Search for empty space; 
+		int fileDescriptor = searchSpace();
+
+		/* if searchSpace returns -1, meaning it reached
+		   16 max opening file. */
+		if (fileDescriptor == -1) {
+			return -1;
+		}
+
+		// create;
+		else {	
+			OpenFile f =ThreadedKernel.fileSystem.open(file, true);
+			
+			if (f == null) {
+				return -1;
+			}
+			
+			else {
+				openFile[fileDescriptor] = f;
+				return fileDescriptor;
+			}
+			
+			// openFile [fileDescriptor] = ThreadedKernel.fileSystem.open(file, true);	
+		}
+
+		// return fileDescriptor;
+		// return fileDescriptor;
+
+	}
+
+
 	private int handleOpen(int address) {
 
 		// invalid address check;
