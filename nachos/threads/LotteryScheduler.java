@@ -32,127 +32,17 @@ public class LotteryScheduler extends PriorityScheduler {
      */
     public LotteryScheduler() {
     }
-
-    public static final int priorityDefault = 1;
-    //values of the min and max priorities were changed 
-    public static final int priorityMinimum = 0;
-    public static final int priorityMaximum = Integer.MAX_VALUE;
-
-    @Override
-    public void setPriority(KThread thread, int priority) {
-        Lib.assertTrue(Machine.interrupt().disabled());
-
-        Lib.assertTrue(priority >= priorityMinimum &&
-                       priority <= priorityMaximum);
-
-        getThreadState(thread).setPriority(priority);
-    }
-
-     /**
+    
+    /**
      * Allocate a new lottery thread queue.
      *
-     * @param    transferPriority    <tt>true</tt> if this queue should
-     * transfer tickets from waiting threads
-     * to the owning thread.
-     * @return a new lottery thread queue.
+     * @param	transferPriority	<tt>true</tt> if this queue should
+     *					transfer tickets from waiting threads
+     *					to the owning thread.
+     * @return	a new lottery thread queue.
      */
     public ThreadQueue newThreadQueue(boolean transferPriority) {
-        return new LotteryQueue(transferPriority);
-    }
-
-    @Override
-    protected ThreadState getThreadState(KThread thread) {
-    	
-        if (thread.schedulingState == null)
-            thread.schedulingState = new LotteryThreadState(thread);
-
-        return (ThreadState) thread.schedulingState;
-    }
-
-    protected class LotteryQueue extends PriorityQueue {
-    	
-        LotteryQueue(boolean transferPriority) {
-        	
-            super(transferPriority);
-            this.entropy = new Random();
-            
-        }
-        
-        @Override
-        
-        public int getEffectivePriority() {
-        	
-            if (!this.givePriority) {
-            	
-                return priorityMinimum;
-                
-            } else if (this.changedPriority) {
-            	
-                // recalculate effective priorities
-                this.efficientPriority = priorityMinimum;
-                
-                for (final ThreadState cur : this.waitThread) {
-                	
-                    Lib.assertTrue(cur instanceof LotteryThreadState);
-                    
-                    this.efficientPriority += cur.getEffectivePriority();
-                }
-                this.changedPriority = false;
-            }
-            return efficientPriority;
-
-        }
-        @Override
-        public ThreadState pickNextThread() {
-        	
-            int totalTickets = this.getEffectivePriority();
-            
-            int winningTicket = totalTickets > 0 ? entropy.nextInt(totalTickets) : 0;
-            
-            for (final ThreadState thread : this.waitThread) {
-            	
-                Lib.assertTrue(thread instanceof LotteryThreadState);
-                
-                winningTicket -= thread.getEffectivePriority();
-                
-                if (winningTicket <= 0) {
-                    return thread;
-                }
-            }
-
-            return null;
-        }
-
-        private final Random entropy;
-
-    }
-    protected class LotteryThreadState extends ThreadState {
-        public LotteryThreadState(KThread thread) {
-            super(thread);
-        }
-        
-        
-        @Override
-        public int getEffectivePriority() {
-        	
-            if (this.have.isEmpty()) {
-            	
-                return this.getPriority();
-                
-            } else if (this.priorityChange) {
-            	
-                this.effectivePriority = this.getPriority();
-                
-                for (final PriorityQueue pq : this.have) {
-                	
-                    Lib.assertTrue(pq instanceof LotteryQueue);
-                    
-                    this.effectivePriority += pq.getEffectivePriority();
-                }
-                
-                this.priorityChange = false;
-            }
-            return this.effectivePriority;
-        }
+	// implement me
+	return null;
     }
 }
