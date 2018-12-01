@@ -77,6 +77,7 @@ public class LotteryScheduler extends PriorityScheduler {
     protected class LotteryQueue extends PriorityQueue {
     	
     	private final Random rand;
+    	boolean transferPriority;
     	
     	//this will randomize 
         LotteryQueue(boolean transferPriority) {
@@ -109,6 +110,7 @@ public class LotteryScheduler extends PriorityScheduler {
                 }
                 this.changedPriority = false;
             }
+            
             return efficientPriority;
 
         }
@@ -146,7 +148,8 @@ public class LotteryScheduler extends PriorityScheduler {
             super(thread);
         }
         
-        
+        //override effective priority because we get them a different way instead 
+        //of just checking that its empty 
         @Override
         public int getEffectivePriority() {
         	
@@ -167,6 +170,7 @@ public class LotteryScheduler extends PriorityScheduler {
                 
                 this.priorityChange = false;
             }
+            
             return this.effectivePriority;
         }
     }
