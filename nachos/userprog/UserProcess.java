@@ -7,8 +7,6 @@ import nachos.userprog.*;
 import java.io.EOFException;
 import java.util.Vector;
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Iterator;
 
 /**
  * Encapsulates the state of a user process that is not contained in its
@@ -31,7 +29,7 @@ public class UserProcess {
 		int numPhysPages = Machine.processor().getNumPhysPages();
 		pageTable = new TranslationEntry[numPhysPages];
 		pID = UserKernel.gPID++;
-		children = new LinkedList<UserProcess>();
+		children = new Vector<Integer>();
 		for (int i=0; i<numPhysPages; i++) 
 			pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
 	
@@ -101,11 +99,8 @@ public class UserProcess {
 	}
 	
 	public boolean isChild(int ID) {
-		Iterator<UserProcess> i = children.iterator();
-		while(i.hasNext()) {
-			if(i.next().pID == ID) {
-				return true;
-			}
+		if(this.parentID == ID) {
+			return true;
 		}
 		return false;
 	}
@@ -114,21 +109,15 @@ public class UserProcess {
 		if(status == -1) {
 			return 0;
 		}
-		while(isChild(processID)) {
+		while(isChild(processID) && children.contains(processID)) {
 			Lib.assertTrue(this != UserKernel.currentProcess());
 			boolean machineStatus = Machine.interrupt().disable();
 			if(status == 0) {
-				for(UserProcess i:children) {
-					if(i.pID == processID) {
-						i.manageParent(this.pID, false);
-						children.remove(i);
-						return 1;
-					}
-				}
+				children.removeElement(processID);
 				return 1;
 			}
 			else {
-				//sleep, somehow
+				
 			}
 			Machine.interrupt().restore(machineStatus);
 			return 1;
@@ -295,23 +284,23 @@ public class UserProcess {
 		//if (vaddr < 0 || vaddr >= memory.length)
 			//return 0;
 
-		int amount = 0;
-		int pageCheck = 0;
-		// for now, just assume that virtual addresses equal physical addresses
-		//if (vaddr < 0 || vaddr >= memory.length)
-		  //  return 0;
-		int vpn = Processor.pageFromAddress(vaddr);
-		int endVpn = Processor.pageFromAddress(vaddr + length);
-		int checkOffset = Processor.offsetFromAddress(vaddr);
-		int paddr = pageTable[pageCheck].ppn*pageSize+checkOffset;
-		
-		pageCheck = Processor.pageFromAddress(vaddr+amount);
-		if(pageCheck <= 0 || pageCheck >= memory.length) 
-			return 0;
-		
-		
-		amount = Math.min(length, memory.length-vaddr);
-		System.arraycopy(data, offset, memory, paddr, amount);
+	int amount = 0;
+	int pageCheck = 0;
+	// for now, just assume that virtual addresses equal physical addresses
+	//if (vaddr < 0 || vaddr >= memory.length)
+	  //  return 0;
+	int vpn = Processor.pageFromAddress(vaddr);
+	int endVpn = Processor.pageFromAddress(vaddr + length);
+	int checkOffset = Processor.offsetFromAddress(vaddr);
+	int paddr = pageTable[pageCheck].ppn*pageSize+checkOffset;
+	
+	pageCheck = Processor.pageFromAddress(vaddr+amount);
+	if(pageCheck <= 0 || pageCheck >= memory.length) 
+		return 0;
+	
+	
+	amount = Math.min(length, memory.length-vaddr);
+	System.arraycopy(data, offset, memory, paddr, amount);
 
 		return amount;
 	}
@@ -830,8 +819,7 @@ public class UserProcess {
 	protected final int stackPages = 8;
 	
 	//list of children
-	//private static Vector<Integer> children;
-	protected LinkedList <UserProcess> children;
+	private static Vector<Integer> children;
 
 	private int initialPC, initialSP;
 	private int argc, argv;
