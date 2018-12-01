@@ -30,145 +30,17 @@ public class LotteryScheduler extends PriorityScheduler {
      */
     public LotteryScheduler() {
     }
-
-    public static final int priorityDefault = 1;
-    //values of the min and max priorities were changed 
-    public static final int priorityMinimum = 1;
-    public static final int priorityMaximum = Integer.MAX_VALUE;
-
-    @Override
-    public void setPriority(KThread thread, int priority) {
-        Lib.assertTrue(Machine.interrupt().disabled());
-
-        //set the condition of the priorities 
-        Lib.assertTrue(priority >= priorityMinimum &&
-                       priority <= priorityMaximum);
-
-        getThreadState(thread).setPriority(priority);
-    }
-
-     /**
+    
+    /**
      * Allocate a new lottery thread queue.
      *
-     * @param    transferPriority    <tt>true</tt> if this queue should
-     * transfer tickets from waiting threads
-     * to the owning thread.
-     * @return a new lottery thread queue.
+     * @param	transferPriority	<tt>true</tt> if this queue should
+     *					transfer tickets from waiting threads
+     *					to the owning thread.
+     * @return	a new lottery thread queue.
      */
-    
-    //function to check the transfer priority and return it in the lottery queue 
     public ThreadQueue newThreadQueue(boolean transferPriority) {
-        return new LotteryQueue(transferPriority);
-    }
-
-    //override getThreadState function previously inside priority scheduler 
-    //the new function checks for null and if it does, assigns the scheduling state to lottery 
-    //we will then return the thread state of this thread 
-    @Override
-    protected ThreadState getThreadState(KThread thread) {
-    	
-        if (thread.schedulingState == null)
-            thread.schedulingState = new LotteryThreadState(thread);
-
-        return (ThreadState) thread.schedulingState;
-    }
-
-    //since we dealt with priority queues, we must now make lottery queues 
-    protected class LotteryQueue extends PriorityQueue {
-    	
-    	private final Random rand;
-    	
-    	//this will randomize 
-        LotteryQueue(boolean transferPriority) {
-        	
-            super(transferPriority);
-            //assign a random number here 
-            this.rand = new Random();
-            
-        }
-        
-        //override previous get effective priority because we are now
-        //getting effective priorities a different way 
-        @Override
-        public int getEffectivePriority() {
-        	
-            if (!this.givePriority) {
-            	
-                return priorityMinimum;
-                
-            } else if (this.changedPriority) {
-            	
-                // recalculate effective priorities
-                this.efficientPriority = priorityMinimum;
-                
-                for (final ThreadState cur : this.waitThread) {
-                	
-                    Lib.assertTrue(cur instanceof LotteryThreadState);
-                    
-                    this.efficientPriority += cur.getEffectivePriority();
-                }
-                this.changedPriority = false;
-            }
-            return efficientPriority;
-
-        }
-        
-        //we will also not just pick the next thread
-        //we will chose thread that has won the lottery 
-        @Override
-        public ThreadState pickNextThread() {
-        	
-            int totalTickets = this.getEffectivePriority();
-            
-            int winningTicket = totalTickets > 0 ? rand.nextInt(totalTickets) : 0;
-            
-            for (final ThreadState thread : this.waitThread) {
-            	
-                Lib.assertTrue(thread instanceof LotteryThreadState);
-                
-                winningTicket -= thread.getEffectivePriority();
-                
-                if (winningTicket <= 0) {
-                    return thread;
-                }
-            }
-
-            return null;
-        }
-
-
-    }
-    
-    protected class LotteryThreadState extends ThreadState {
-    	
-        public LotteryThreadState(KThread thread) {
-        	
-            super(thread);
-        }
-        
-        
-        @Override
-        public int getEffectivePriority() {
-        	
-            if (this.have.isEmpty()) {
-            	
-                return this.getPriority();
-                
-            } else if (this.priorityChange) {
-            	
-                this.effectivePriority = this.getPriority();
-                
-                for (final PriorityQueue pq : this.have) {
-                	
-                    Lib.assertTrue(pq instanceof LotteryQueue);
-                    
-                    this.effectivePriority += pq.getEffectivePriority();
-                }
-                
-                this.priorityChange = false;
-            }
-            return this.effectivePriority;
-        }
+	// implement me
+	return null;
     }
 }
-
