@@ -223,26 +223,11 @@ public class UserProcess {
 		byte[] memory = Machine.processor().getMemory();
 
 		// for now, just assume that virtual addresses equal physical addresses
-		//if (vaddr < 0 || vaddr >= memory.length)
-			//return 0;
-	int amount = 0;
-	int pageCheck = 0;
-	
-	int vpn = Processor.pageFromAddress(vaddr);
-	int endVpn = Processor.pageFromAddress(vaddr + length);
-	int checkOffset = Processor.offsetFromAddress(vaddr);
-	int paddr = pageTable[pageCheck].ppn*pageSize+checkOffset;
-	TranslationEntry entry = pageTable[vpn];
-	entry.used=true;
-	int ppn = entry.ppn;
-	 
+		if (vaddr < 0 || vaddr >= memory.length)
+			return 0;
 
-	      
-	      if (ppn < 0 || ppn >= Machine.processor().getNumPhysPages()) 
-	    	  return 0;			
-	 
-		 amount = Math.min(length, memory.length-paddr);
-		System.arraycopy(memory, paddr, data, offset, amount);
+		int amount = Math.min(length, memory.length-vaddr);
+		System.arraycopy(memory, vaddr, data, offset, amount);
 
 		return amount;
 	}
@@ -281,26 +266,11 @@ public class UserProcess {
 		byte[] memory = Machine.processor().getMemory();
 
 		// for now, just assume that virtual addresses equal physical addresses
-		//if (vaddr < 0 || vaddr >= memory.length)
-			//return 0;
+		if (vaddr < 0 || vaddr >= memory.length)
+			return 0;
 
-	int amount = 0;
-	int pageCheck = 0;
-	// for now, just assume that virtual addresses equal physical addresses
-	//if (vaddr < 0 || vaddr >= memory.length)
-	  //  return 0;
-	int vpn = Processor.pageFromAddress(vaddr);
-	int endVpn = Processor.pageFromAddress(vaddr + length);
-	int checkOffset = Processor.offsetFromAddress(vaddr);
-	int paddr = pageTable[pageCheck].ppn*pageSize+checkOffset;
-	
-	pageCheck = Processor.pageFromAddress(vaddr+amount);
-	if(pageCheck <= 0 || pageCheck >= memory.length) 
-		return 0;
-	
-	
-	amount = Math.min(length, memory.length-vaddr);
-	System.arraycopy(data, offset, memory, paddr, amount);
+		int amount = Math.min(length, memory.length-vaddr);
+		System.arraycopy(data, offset, memory, vaddr, amount);
 
 		return amount;
 	}
