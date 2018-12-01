@@ -41,7 +41,8 @@ public class LotteryScheduler extends PriorityScheduler {
         Lib.assertTrue(Machine.interrupt().disabled());
 
         //set the condition of the priorities 
-        Lib.assertTrue(priority >= priorityMinimum && priority <= priorityMaximum);
+        Lib.assertTrue(priority >= priorityMinimum &&
+                       priority <= priorityMaximum);
 
         getThreadState(thread).setPriority(priority);
     }
@@ -97,7 +98,7 @@ public class LotteryScheduler extends PriorityScheduler {
                 
             } else if (this.changedPriority) {
             	
-                // find new effective priorities
+                // recalculate effective priorities
                 this.efficientPriority = priorityMinimum;
                 
                 for (final ThreadState cur : this.waitThread) {
@@ -106,10 +107,8 @@ public class LotteryScheduler extends PriorityScheduler {
                     
                     this.efficientPriority += cur.getEffectivePriority();
                 }
-                
                 this.changedPriority = false;
             }
-            
             return efficientPriority;
 
         }
@@ -147,8 +146,7 @@ public class LotteryScheduler extends PriorityScheduler {
             super(thread);
         }
         
-        //override effective priority because we get them a different way instead 
-        //of just checking that its empty 
+        
         @Override
         public int getEffectivePriority() {
         	
@@ -169,8 +167,8 @@ public class LotteryScheduler extends PriorityScheduler {
                 
                 this.priorityChange = false;
             }
-            
             return this.effectivePriority;
         }
     }
 }
+
