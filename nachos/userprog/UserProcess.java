@@ -168,12 +168,8 @@ public class UserProcess {
 	 */
 
 	public void exit(int status) {
-		coff.close();
-		//close all open files
-		for(int i = 0; i < 16; i++){
-			handleSyscall(8, i, 0, 0, 0);
-		}
 		children.clear();
+		
 	}
 	
 	/**
