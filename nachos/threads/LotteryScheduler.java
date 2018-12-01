@@ -33,7 +33,7 @@ public class LotteryScheduler extends PriorityScheduler {
 
     public static final int priorityDefault = 1;
     //values of the min and max priorities were changed 
-    public static final int priorityMinimum = 1;
+    public static final int priorityMinimum = 0;
     public static final int priorityMaximum = Integer.MAX_VALUE;
 
     @Override
@@ -76,7 +76,8 @@ public class LotteryScheduler extends PriorityScheduler {
     protected class LotteryQueue extends PriorityQueue {
     	
     	private final Random rand;
-    	
+        boolean transferPriority;
+        
     	//this will randomize 
         LotteryQueue(boolean transferPriority) {
         	
@@ -91,7 +92,7 @@ public class LotteryScheduler extends PriorityScheduler {
         @Override
         public int getEffectivePriority() {
         	
-            if (!this.givePriority) {
+            if (!this.transferPriority) {
             	
                 return priorityMinimum;
                 
@@ -174,3 +175,4 @@ public class LotteryScheduler extends PriorityScheduler {
         }
     }
 }
+
