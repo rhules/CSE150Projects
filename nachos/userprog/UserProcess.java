@@ -169,8 +169,18 @@ public class UserProcess {
 
 	public void exit(int status) {
 		coff.close();
-		children.clear();
-		
+		//close any open files
+		/*for(int i = 0; i < 16; i++) {
+			if(openFile[i] != null) {
+				handleSyscall(8, i, 0, 0, 0);
+			}
+		}*/
+		//disown children
+		for(UserProcess i: children) {
+			i.manageParent(this.pID, false);
+			children.remove(i);
+		}
+		//check for being last thread, somehow
 	}
 	
 	/**
