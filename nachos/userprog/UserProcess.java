@@ -168,6 +168,7 @@ public class UserProcess {
 	 */
 
 	public void exit(int status) {
+		coff.close();
 		children.clear();
 		
 	}
