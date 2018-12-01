@@ -150,7 +150,7 @@ public class LotteryScheduler extends PriorityScheduler {
         @Override
         public int getEffectivePriority() {
         	
-            if (this.have.isEmpty()) {
+            if (this.resourcesIHave.isEmpty()) {
             	
                 return this.getPriority();
                 
@@ -158,7 +158,7 @@ public class LotteryScheduler extends PriorityScheduler {
             	
                 this.effectivePriority = this.getPriority();
                 
-                for (final PriorityQueue pq : this.have) {
+                for (final PriorityQueue pq : this.resourcesIHave) {
                 	
                     Lib.assertTrue(pq instanceof LotteryQueue);
                     
