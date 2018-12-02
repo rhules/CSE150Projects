@@ -279,53 +279,13 @@ public class UserProcess {
 		byte[] memory = Machine.processor().getMemory();
 
 		// for now, just assume that virtual addresses equal physical addresses
-//		if (vaddr < 0 || vaddr >= memory.length)
-//			return 0;
-		
-		
-		if (length > (pageSize * numPages - vaddr)) {
-			length = pageSize * numPages - vaddr;
-		}
-		
-		// if length is too big, then cut it off;
-		if (data.length - offset < length) {
-			length = data.length - offset;
-		}
-		
-		// successfully transferred bytes;
-		int bytes = 0;
-		
-		do {
-			// calculate page number;
-			int pageNumber = Processor.pageFromAddress(vaddr + bytes);
-			
-			/* page number should not be grater than the page size and should
-			   not be negative; */
-			if (pageTable.length <= pageNumber || pageNumber < 0) {
-				return 0;
-				}
-			
-			// calculate page offset;
-			int calcOffset = Processor.offsetFromAddress(vaddr + bytes);
-			
-			// now calculate the remaining amount;
-			int bytesRemaining = pageSize - calcOffset;
-			
-			// and calculate the next amount: the min of what's remaining;
-			int amount = Math.min(bytesRemaining, length - bytes);
-			
-			// calculate physical address;
-			int phyAddr = pageTable[pageNumber].ppn * pageSize + calcOffset;
-			
-			// now move from what's stored in the physical address to virtual mem;
-			System.arraycopy(memory, phyAddr, data, offset + bytes, length);
-			
-			// fix what's successfully transferred;
-			bytes = bytes + amount;
-		
-		} while(bytes < length);
+		if (vaddr < 0 || vaddr >= memory.length)
+			return 0;
 
-		return bytes;
+		int amount = Math.min(length, memory.length-vaddr);
+		System.arraycopy(memory, vaddr, data, offset, amount);
+
+		return amount;
 	}
 
 	/**
