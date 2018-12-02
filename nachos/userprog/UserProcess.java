@@ -41,6 +41,7 @@ public class UserProcess {
 		openFile[0] = UserKernel.console.openForReading();
 		openFile[1] = UserKernel.console.openForWriting();
 		UserKernel.processList.add(this);
+		threads = new LinkedList<UThread>();
 	}
 	
 	//Allocate a new process with a parent
