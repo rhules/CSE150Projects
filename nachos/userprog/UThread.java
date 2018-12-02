@@ -56,6 +56,51 @@ public class UThread extends KThread {
 
 		process.restoreState();
 	}
+	/*private static ThreadQueue waitList = null;
+	public void join() {
+		//Lib.debug(dbgThread, "Joining to thread: " + toString());
+		Lib.assertTrue(this != KThread.currentThread());
+
+		// since we have this.status (status of thread)
+		// we'll name machine status to machineStatus
+		boolean machineStatus = Machine.interrupt().disable();
+
+		// instantiate waitList;
+		if (waitList == null) 
+		{
+			waitList = ThreadedKernel.scheduler.newThreadQueue(true);
+		}
+
+		if (this.process.status == 4) {
+			return;
+		} else {
+			
+			waitList.acquire(this);
+			waitList.waitForAccess(currentThread);
+			KThread.sleep();
+		}
+
+		Machine.interrupt().restore(machineStatus);
+
+		//		int tempCount = count + 1;
+		//
+		//		// check to see if this method is already called
+		//		if (tempCount != 1) {
+		//			return;
+		//		}
+		//
+		//		boolean status = Machine.interrupt().disable();
+		//
+		//		waitList.acquire(this);
+		//		waitList.waitForAccess(currentThread);
+		//
+		//		// let current thread sleep
+		//		KThread.sleep();
+		//
+		//		// restore interrupts
+		//		Machine.interrupt().restore(status);
+
+	}*/
 
 	/**
 	 * Storage for the user register set.

@@ -40,6 +40,7 @@ public class UserProcess {
 			
 		openFile[0] = UserKernel.console.openForReading();
 		openFile[1] = UserKernel.console.openForWriting();
+		UserKernel.processList.add(this);
 	}
 	
 	//Allocate a new process with a parent
@@ -68,7 +69,9 @@ public class UserProcess {
 		if (!load(name, args))
 			return false;
 
-		new UThread(this).setName(name).fork();
+		UThread temp = new UThread(this);
+		temp.setName(name).fork();
+		threads.add(temp);
 
 		return true;
 	}
@@ -137,19 +140,28 @@ public class UserProcess {
 		while(isChild(processID)) {
 			
 			boolean machineStatus = Machine.interrupt().disable();
-			if(status == 0) {
+			//return if the given process has ended
+			if(status == 0|| status == -1) {
 				for(UserProcess i:children) {
 					if(i.pID == processID) {
 						i.manageParent(this.pID, false);
 						children.remove(i);
-						return 1;
+						if(status == 0) {
+							return 1;
+						}
+						else {
+							return 0;
+						}
 					}
 				}
-				return 1;
+				return -1;
 			}
 			else {
 				Machine.interrupt().restore(machineStatus);
-				//sleep, somehow
+				//sleep
+				for(UThread i:threads) {
+					i.join();
+				}
 			}
 			//return 1;
 		}
@@ -181,7 +193,12 @@ public class UserProcess {
 			i.manageParent(this.pID, false);
 			children.remove(i);
 		}
-		//check for being last thread, somehow
+		//remove this process from the process list
+		UserKernel.processList.remove(this);
+		//If process list is empty, end simulation
+		if(UserKernel.processList.isEmpty()) {
+			Machine.terminate();
+		}
 	}
 	
 	/**
@@ -811,6 +828,9 @@ public class UserProcess {
 		}
 	}
 
+	//list of threads associated with this process
+	//private UThread thread;
+	private LinkedList<UThread> threads;
 	
 	protected OpenFile[] openFile; 
 

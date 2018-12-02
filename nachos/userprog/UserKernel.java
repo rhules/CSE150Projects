@@ -1,5 +1,7 @@
 package nachos.userprog;
 
+import java.util.LinkedList;
+
 import nachos.machine.*;
 import nachos.threads.*;
 import nachos.userprog.*;
@@ -13,6 +15,7 @@ public class UserKernel extends ThreadedKernel {
 	 */
 	public UserKernel() {
 		super();
+		processList = new LinkedList<UserProcess>();
 	}
 
 	/**
@@ -106,6 +109,9 @@ public class UserKernel extends ThreadedKernel {
 	public void terminate() {
 		super.terminate();
 	}
+	
+	// Globally accessible process list
+	public static LinkedList <UserProcess> processList;
 
 	/** Globally accessible reference to the synchronized console. */
 	public static SynchConsole console;
