@@ -35,11 +35,11 @@ public class UserProcess {
 		for (int i=0; i<numPhysPages; i++) 
 			pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
 	
-	// supports up to 16 files;
-	openFile = new OpenFile[16];
-		
-	openFile[0] = UserKernel.console.openForReading();
-	openFile[1] = UserKernel.console.openForWriting();
+		// supports up to 16 files;
+		openFile = new OpenFile[16];
+			
+		openFile[0] = UserKernel.console.openForReading();
+		openFile[1] = UserKernel.console.openForWriting();
 	}
 	
 	//Allocate a new process with a parent
@@ -130,11 +130,12 @@ public class UserProcess {
 	}
 	
 	public int join(int processID, int status) {
+		Lib.assertTrue(this != UserKernel.currentProcess());
 		if(status == -1) {
 			return 0;
 		}
 		while(isChild(processID)) {
-			Lib.assertTrue(this != UserKernel.currentProcess());
+			
 			boolean machineStatus = Machine.interrupt().disable();
 			if(status == 0) {
 				for(UserProcess i:children) {
@@ -147,10 +148,10 @@ public class UserProcess {
 				return 1;
 			}
 			else {
+				Machine.interrupt().restore(machineStatus);
 				//sleep, somehow
 			}
-			Machine.interrupt().restore(machineStatus);
-			return 1;
+			//return 1;
 		}
 		return -1;
 	}
@@ -170,11 +171,11 @@ public class UserProcess {
 	public void exit(int status) {
 		coff.close();
 		//close any open files
-		/*for(int i = 0; i < 16; i++) {
+		for(int i = 15; i > 1; i--) {
 			if(openFile[i] != null) {
 				handleSyscall(8, i, 0, 0, 0);
 			}
-		}*/
+		}
 		//disown children
 		for(UserProcess i: children) {
 			i.manageParent(this.pID, false);
@@ -826,14 +827,15 @@ public class UserProcess {
 	protected final int stackPages = 8;
 	
 	//list of children
-	//private static Vector<Integer> children;
 	protected LinkedList <UserProcess> children;
 
 	private int initialPC, initialSP;
 	private int argc, argv;
 	
+	//ID of this process
 	private int pID;
 	
+	//ID of the parent of this process, -1 means no parent
 	private int parentID = -1;
 	
 	private static final int pageSize = Processor.pageSize;
