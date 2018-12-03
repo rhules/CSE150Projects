@@ -271,6 +271,22 @@ public class UserProcess {
 
 		return null;
 	}
+	
+	public String readVirtualMemoryString(int vaddr, int maxLength) {
+		Lib.assertTrue(maxLength >= 0);
+
+		byte[] bytes = new byte[maxLength+1];
+
+		int bytesRead = readVirtualMemory(vaddr, bytes);
+
+		for (int length=0; length<bytesRead; length++) {
+			if (bytes[length] == 0)
+				return new String(bytes, 0, length);
+		}
+
+		return null;
+	}
+
 
 	/**
 	 * Transfer data from this process's virtual memory to all of the specified
