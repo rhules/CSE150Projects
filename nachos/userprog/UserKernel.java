@@ -18,10 +18,10 @@ public class UserKernel extends ThreadedKernel {
 		processList = new LinkedList<UserProcess>();
 		
 		//memoryLock = new Lock();
-		memoryList = new LinkedList<Integer>();
+		//memoryList = new LinkedList<Integer>();
 		
-		for (int i = 0; i < 1024; i++) {
-			memoryList.add(i);
+		//for (int i = 0; i < 1024; i++) {
+		//	memoryList.add(i);
 		}
 	}
 
@@ -121,10 +121,10 @@ public class UserKernel extends ThreadedKernel {
 	public static LinkedList <UserProcess> processList;
 	
 	// locks to protect;
-	public static Lock memoryLock;
+	//public static Lock memoryLock;
 	
 	// and to store free physical page number;
-	public static LinkedList<Integer> memoryList;
+	//public static LinkedList<Integer> memoryList;
 
 	/** Globally accessible reference to the synchronized console. */
 	public static SynchConsole console;
