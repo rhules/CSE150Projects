@@ -41,7 +41,7 @@ public class UserProcess {
 		openFile[0] = UserKernel.console.openForReading();
 		openFile[1] = UserKernel.console.openForWriting();
 		UserKernel.processList.add(this);
-		threads = new LinkedList<UThread>();
+		this.threads = new LinkedList<UThread>();
 	}
 	
 	//Allocate a new process with a parent
@@ -72,7 +72,7 @@ public class UserProcess {
 
 		UThread temp = new UThread(this);
 		temp.setName(name).fork();
-		threads.add(temp);
+		this.threads.add(temp);
 
 		return true;
 	}
@@ -134,7 +134,13 @@ public class UserProcess {
 	}
 	
 	public int join(int processID, int status) {
-		Lib.assertTrue(this != UserKernel.currentProcess());
+		//Lib.assertTrue(this != UserKernel.currentProcess());
+		if(this == UserKernel.currentProcess()) {
+			boolean machineStatus = Machine.interrupt().disable();
+			KThread.sleep();
+			Machine.interrupt().restore(machineStatus);
+		}
+		
 		if(status == -1) {
 			return 0;
 		}
@@ -158,7 +164,7 @@ public class UserProcess {
 				return -1;
 			}
 			else {
-				Machine.interrupt().restore(machineStatus);
+				
 				//sleep
 				UserProcess temp = children.element();
 				for(UserProcess i:children) {
@@ -169,6 +175,7 @@ public class UserProcess {
 				for(UThread i:threads) {
 					i.join(status, temp);
 				}
+				Machine.interrupt().restore(machineStatus);
 			}
 			//return 1;
 		}
