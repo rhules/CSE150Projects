@@ -17,7 +17,7 @@ public class UserKernel extends ThreadedKernel {
 		super();
 		processList = new LinkedList<UserProcess>();
 		
-				memoryLock = new Lock();
+		memoryLock = new Lock();
 		memoryList = new LinkedList<Integer>();
 		
 		for (int i = 0; i < 1024; i++) {
