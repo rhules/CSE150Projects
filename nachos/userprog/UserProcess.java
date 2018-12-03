@@ -541,11 +541,31 @@ public class UserProcess {
 	 * @return	<tt>true</tt> if the sections were successfully loaded.
 	 */
 	protected boolean loadSections() {
+		// modified
+		UserKernel.memoryLock.acquire(); // acquire lock
+		// checks		
+		
 		if (numPages > Machine.processor().getNumPhysPages()) {
 			coff.close();
 			Lib.debug(dbgProcess, "\tinsufficient physical memory");
+			
+			// release lock
+			UserKernel.memoryLock.release();
+			
 			return false;
 		}
+		
+		// page table;
+		pageTable = new TranslationEntry[numPages];
+		
+		for (int i = 0; i < numPages; i++) {
+			// take out from the free list by removing;
+			int pageNext = UserKernel.memoryList.remove();
+			pageTable[i] = new TranslationEntry(i, pageNext, true, false, false, false);	
+		}
+		
+		// release lock
+		UserKernel.memoryLock.release();
 
 		// load sections
 		for (int s=0; s<coff.getNumSections(); s++) {
@@ -559,11 +579,18 @@ public class UserProcess {
 
 				// for now, just assume virtual addresses=physical addresses
 				//section.loadPage(i, vpn);
-				TranslationEntry entry = pageTable[vpn];
+				/* TranslationEntry entry = pageTable[vpn];
 				entry.readOnly = section.isReadOnly();
 				int ppn = entry.ppn;
 
-				section.loadPage(i, ppn); 
+				section.loadPage(i, ppn); */
+				
+				// label it as read only;
+				pageTable[vpn].readOnly = section.isReadOnly();
+				// add to physical page table;
+				section.loadPage(i, pageTable[vpn].ppn);
+				
+				
 			}
 		}
 
