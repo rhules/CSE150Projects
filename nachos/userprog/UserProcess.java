@@ -34,18 +34,18 @@ public class UserProcess {
 		children = new LinkedList<UserProcess>();
 		for (int i=0; i<numPhysPages; i++) 
 			pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
-	
+
 		// supports up to 16 files;
 		openFile = new OpenFile[16];
-			
+
 		openFile[0] = UserKernel.console.openForReading();
 		openFile[1] = UserKernel.console.openForWriting();
 		UserKernel.processList.add(this);
 		this.threads = new LinkedList<UThread>();
 	}
-	
+
 	//Allocate a new process with a parent
-	
+
 
 	/**
 	 * Allocate and return a new process of the correct class. The class name
@@ -76,7 +76,7 @@ public class UserProcess {
 
 		return true;
 	}
-	
+
 	/**
 	 * Execute the specified program with the specified arguments. Attempts to
 	 * load the program, and then forks a thread to run it.
@@ -86,7 +86,7 @@ public class UserProcess {
 	 * @param	argv	the arguments to pass to the executable.
 	 * @return	-1 on error, pID otherwise.
 	 */
-	
+
 	public int exec(int address) {
 		String[] av = new String[argc];
 		//int transferred = readVirtualMemory(argv, av.getBytes(), 0, argc);
@@ -96,13 +96,13 @@ public class UserProcess {
 		if(file == null||!file.endsWith(".coff")||!load(file, av)||argc < 0 || argv > numPages * pageSize) {
 			return -1;
 		}
-		
+
 		String[] arg = new String[argc];
-		
+
 		// store data into virtual memory;
 		for (int i = 0; i < argc; i++) {
 			byte[] argAddr = new byte[4];
-			
+
 			// read virtual memory address;
 			if (readVirtualMemory(argv + i * 4, argAddr) > 0) {
 				// reading byte by byte;
@@ -111,18 +111,18 @@ public class UserProcess {
 		}
 
 		UserProcess temp = UserProcess.newUserProcess();
-		
+
 		// fail opening the file;
 		if (!temp.execute(file, arg)) {
 			return -1;
 		}
-		
+
 		temp.manageParent(this.pID, true);
 		this.children.add(temp);
-		
+
 		return temp.pID;
 	}
-	
+
 	public boolean isChild(int ID) {
 		Iterator<UserProcess> i = children.iterator();
 		while(i.hasNext()) {
@@ -132,7 +132,7 @@ public class UserProcess {
 		}
 		return false;
 	}
-	
+
 	public int join(int processID, int status) {
 		//Lib.assertTrue(this != UserKernel.currentProcess());
 		if(this == UserKernel.currentProcess()) {
@@ -140,12 +140,12 @@ public class UserProcess {
 			KThread.sleep();
 			Machine.interrupt().restore(machineStatus);
 		}
-		
+
 		if(status == -1) {
 			return 0;
 		}
 		while(isChild(processID)) {
-			
+
 			boolean machineStatus = Machine.interrupt().disable();
 			//return if the given process has ended
 			if(status == 0|| status == -1) {
@@ -164,7 +164,7 @@ public class UserProcess {
 				return -1;
 			}
 			else {
-				
+
 				//sleep
 				UserProcess temp = children.element();
 				for(UserProcess i:children) {
@@ -181,11 +181,11 @@ public class UserProcess {
 		}
 		return -1;
 	}
-	
+
 	public UThread getFirstThread() {
 		return threads.element();
 	}
-	
+
 	/**
 	 * Terminate the current process immediately. Any open file descriptors 
 	 * belonging to the process are closed. Any children of the process no longer
@@ -218,7 +218,7 @@ public class UserProcess {
 			Machine.terminate();
 		}
 	}
-	
+
 	/**
 	 * Save the state of this process in preparation for a context switch.
 	 * Called by <tt>UThread.saveState()</tt>.
@@ -294,58 +294,58 @@ public class UserProcess {
 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
 		byte[] memory = Machine.processor().getMemory();
-		
-		
+
+
 
 		// for now, just assume that virtual addresses equal physical addresses
-//		if (vaddr < 0 || vaddr >= memory.length)
-//			return 0;
-		
-		
+		//		if (vaddr < 0 || vaddr >= memory.length)
+		//			return 0;
+
+
 		if (length > (pageSize * numPages - vaddr)) {
 			length = pageSize * numPages - vaddr;
 		}
-		
+
 		// if length is too big, then cut it off;
 		if (data.length - offset < length) {
 			length = data.length - offset;
 		}
-		
+
 		// successfully transferred bytes;
 		int bytes = 0;
-		
+
 		do {
 			// calculate page number;
 			int pageNumber = Processor.pageFromAddress(vaddr + bytes);
-			
+
 			// page number should not be grater than the page size and should not be negative;
 			if (pageTable.length <= pageNumber || pageNumber < 0) {
 				return 0;
-				}
-			
+			}
+
 			// calculate page offset;
 			int calcOffset = Processor.offsetFromAddress(vaddr + bytes);
-			
+
 			// now calculate the remaining amount;
 			int bytesRemaining = pageSize - calcOffset;
-			
+
 			// and calculate the next amount: the min of what's remaining;
 			int amount = Math.min(bytesRemaining, length - bytes);
-			
+
 			// calculate physical address;
 			int phyAddr = pageTable[pageNumber].ppn * pageSize + calcOffset;
-			
+
 			// now move from what's stored in the physical address to virtual mem;
 			System.arraycopy(memory, phyAddr, data, offset + bytes, amount);
-			
+
 			// fix what's successfully transferred;
 			bytes = bytes + amount;
-		
+
 		} while(bytes < length);
 
 		return bytes;
 
-		
+
 	}
 
 	/**
@@ -386,40 +386,40 @@ public class UserProcess {
 		//	return 0;
 
 		int bytes = 0;
-	
-	do {
-		// calculate page number;
-		int pageNumber = Processor.pageFromAddress(vaddr + bytes);
-		
-		/* page number should not be grater than the page size and should
-		   not be negative; */
-		if (pageTable.length <= pageNumber || pageNumber < 0) {
-			return 0;
-			}
-		
-		// calculate page offset;
-		int calcOffset = Processor.offsetFromAddress(vaddr + bytes);
-		
-		// now calculate the remaining amount;
-		int bytesRemaining = pageSize - calcOffset;
-		
-		// and calculate the next amount: the min of what's remaining;
-		int amount = Math.min(bytesRemaining, length - bytes);
-		
-		// calculate physical address;
-		int phyAddr = pageTable[pageNumber].ppn * pageSize + calcOffset;
-		
-		// now move from what's stored in the physical address to virtual mem;
-		System.arraycopy(data, calcOffset + bytes, memory, phyAddr, amount);
-		
-		// fix what's successfully transferred;
-		bytes = bytes + amount;
-	
-	} while(bytes < length);
 
-	return bytes;
+		do {
+			// calculate page number;
+			int pageNumber = Processor.pageFromAddress(vaddr + bytes);
+
+			/* page number should not be grater than the page size and should
+		   not be negative; */
+			if (pageTable.length <= pageNumber || pageNumber < 0) {
+				return 0;
+			}
+
+			// calculate page offset;
+			int calcOffset = Processor.offsetFromAddress(vaddr + bytes);
+
+			// now calculate the remaining amount;
+			int bytesRemaining = pageSize - calcOffset;
+
+			// and calculate the next amount: the min of what's remaining;
+			int amount = Math.min(bytesRemaining, length - bytes);
+
+			// calculate physical address;
+			int phyAddr = pageTable[pageNumber].ppn * pageSize + calcOffset;
+
+			// now move from what's stored in the physical address to virtual mem;
+			System.arraycopy(data, calcOffset + bytes, memory, phyAddr, amount);
+
+			// fix what's successfully transferred;
+			bytes = bytes + amount;
+
+		} while(bytes < length);
+
+		return bytes;
 	}
-	
+
 	public boolean manageParent(int parID, boolean add) {
 		if(add) {
 			if(this.parentID != -1) {
@@ -551,11 +551,11 @@ public class UserProcess {
 
 				// for now, just assume virtual addresses=physical addresses
 				//section.loadPage(i, vpn);
-				TranslationEntry entry = pageTable[vpn];                             
-        			entry.readOnly = section.isReadOnly();                                     
-        			int ppn = entry.ppn;                                                       
-        
-        			section.loadPage(i, ppn); 
+				TranslationEntry entry = pageTable[vpn];
+				entry.readOnly = section.isReadOnly();
+				int ppn = entry.ppn;
+
+				section.loadPage(i, ppn); 
 			}
 		}
 
@@ -602,10 +602,10 @@ public class UserProcess {
 		return 0;
 	}
 
-	
+
 	private int searchSpace() {
 		int fileDescriptor = -1;
-		
+
 		// support 16 files max;
 		for (int i = 0; i < 16; i++) 
 		{
@@ -618,7 +618,7 @@ public class UserProcess {
 	}
 
 	private int handleCreat(int address) {
-		
+
 		// invalid address;
 		if (address < 0) {
 			return -1;
@@ -645,16 +645,16 @@ public class UserProcess {
 		// create;
 		else {	
 			OpenFile f =ThreadedKernel.fileSystem.open(file, true);
-			
+
 			if (f == null) {
 				return -1;
 			}
-			
+
 			else {
 				openFile[fileDescriptor] = f;
 				return fileDescriptor;
 			}
-			
+
 			// openFile [fileDescriptor] = ThreadedKernel.fileSystem.open(file, true);	
 		}
 
@@ -670,7 +670,7 @@ public class UserProcess {
 		if (address < 0) {
 			return -1;
 		}
-		
+
 		String file = readVirtualMemoryString(address, 256);
 
 		// cannot open file does not exist. 
@@ -689,44 +689,44 @@ public class UserProcess {
 
 		else {
 			// the value of create should be false since we are only handling open right here;
-			
+
 			OpenFile f = ThreadedKernel.fileSystem.open(file, false);
-			
+
 			if(f == null) {
 				return -1;
 			}
-			
+
 			else {
-			
-			//openFile[fileDescriptor] = ThreadedKernel.fileSystem.open(file, false);
+
+				//openFile[fileDescriptor] = ThreadedKernel.fileSystem.open(file, false);
 				openFile[fileDescriptor] = f;
 				return fileDescriptor;
 			}
 		}		
 	}
-	
+
 	private int handleRead(int fileDescriptor, int addr, int l) {
 		if (fileDescriptor > 15 || fileDescriptor < 0) {
 			return -1;
 		}
-		
+
 		else if(openFile[fileDescriptor] == null) {
 			return -1;
 		}
-		
+
 		byte buffer[] = new byte[l];
-		
+
 		int readNum = openFile[fileDescriptor].read(buffer, 0, l);
-		
+
 		// couldn't read data;
 		if(readNum <= 0) {
 			return 0;
 		}
-		
+
 		int writeNum = writeVirtualMemory(addr, buffer);
 		return writeNum;
 	}	
-	
+
 	private int handleWrite(int fileDescriptor, int addr, int l) {
 		// write data from virtual memory address into the file;
 
@@ -734,63 +734,63 @@ public class UserProcess {
 		if (fileDescriptor > 15 || fileDescriptor < 0) {
 			return -1;
 		}
-		
+
 		else if(openFile[fileDescriptor] == null) {
 			return -1;
 		}
-		
+
 		byte buffer[] = new byte[l];
-		
+
 		// store data into the temp buffer table;
 		int readNum = readVirtualMemory(addr, buffer);
-		
+
 		if (readNum <= 0) {
 			// no data read;
 			return 0;
 		}
-		
+
 		// now write the data in;
 		int writeNum = openFile[fileDescriptor].write(buffer, 0, l);
-		
+
 		if (writeNum < l) {
 			// error occured when writing, return error;
 			return -1;
 		}
-	
+
 		// return written; 
 		return writeNum;
 	}
-	
-	
-	
+
+
+
 	private int handleClose(int fileDescriptor) {
-		
+
 		// add comments later;
-		
+
 		// should not be greater than 15 or less than 0;
 		if (fileDescriptor > 15 || fileDescriptor < 0) {
 			return -1;
 		}
-		
+
 		// or if the file does not exist, error;
 		else if (openFile[fileDescriptor] == null) {
 			return -1;
 		}
-		
+
 		else {
-		
-		openFile[fileDescriptor].close();
-		openFile[fileDescriptor] = null;
-		
+
+			openFile[fileDescriptor].close();
+			openFile[fileDescriptor] = null;
+
 		}
-		
+
 		return 0;
 	}
-	
-	
+
+
 	private int handleUnlink(int address) {
 		// use for removing file;
-		
+
 		// invalid virtual memory address;
 		if (address < 0) {
 			return -1;
@@ -807,14 +807,14 @@ public class UserProcess {
 		if (ThreadedKernel.fileSystem.remove(file)) {
 			return 0;	// deleted successfully;
 		}
-		
+
 		else {
 			return -1;
 		}
 
 	}
 
-	
+
 	private static final int
 	syscallHalt = 0,
 	syscallExit = 1,
@@ -859,22 +859,22 @@ public class UserProcess {
 		switch (syscall) {
 		case syscallHalt:
 			return handleHalt();
-		
+
 		case syscallCreate:
 			return handleCreat(a0);
-			
+
 		case syscallOpen:
 			return handleOpen(a0);
-			
+
 		case syscallRead:
 			return handleRead(a0, a1, a2);
-			
+
 		case syscallWrite:
 			return handleWrite(a0, a1, a2);
-			
+
 		case syscallClose:
 			return handleClose(a0);
-			
+
 		case syscallUnlink:
 			return handleUnlink(a0);
 
@@ -926,10 +926,10 @@ public class UserProcess {
 	//list of threads associated with this process
 	//private UThread thread;
 	private LinkedList<UThread> threads;
-	
+
 	protected OpenFile[] openFile; 
 
-	
+
 	/** The program being run by this process. */
 	protected Coff coff;
 
@@ -940,19 +940,19 @@ public class UserProcess {
 
 	/** The number of pages in the program's stack. */
 	protected final int stackPages = 8;
-	
+
 	//list of children
 	protected LinkedList <UserProcess> children;
 
 	private int initialPC, initialSP;
 	private int argc, argv;
-	
+
 	//ID of this process
 	private int pID;
-	
+
 	//ID of the parent of this process, -1 means no parent
 	private int parentID = -1;
-	
+
 	private static final int pageSize = Processor.pageSize;
 	private static final char dbgProcess = 'a';
 }
