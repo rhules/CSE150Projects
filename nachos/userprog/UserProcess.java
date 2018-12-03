@@ -335,64 +335,51 @@ public class UserProcess {
 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
 		byte[] memory = Machine.processor().getMemory();
-	
-		// for now, just assume that virtual addresses equal physical addresses
-		if (vaddr < 0 || vaddr >= memory.length)
-	    return 0;
-
-		int amount = Math.min(length, memory.length-vaddr);
-		System.arraycopy(memory, vaddr, data, offset, amount);
-
-		return amount;
+//	
+//		// for now, just assume that virtual addresses equal physical addresses
+//		if (vaddr < 0 || vaddr >= memory.length)
+//	    return 0;
+//
+//		int amount = Math.min(length, memory.length-vaddr);
+//		System.arraycopy(memory, vaddr, data, offset, amount);
+//
+//		return amount;
 		
-				
-// 		Lib.assertTrue(offset >= 0 && length >= 0
-// 				&& offset + length <= data.length);
-
-// 		byte[] memory = Machine.processor().getMemory();
-
-// 		// for now, just assume that virtual addresses equal physical addresses
-// 		if (vaddr < 0 || vaddr +length-1>Machine.processor().makeAddress(numPages-1, pageSize-1)){
-// 			Lib.debug(dbgProcess, "readVirtualMemory:Invalid virtual Address");
-// 			return 0;
-// 		}
-
-
-// 		int transferredCounter=0;
-// 		int endVAddr=vaddr+length-1;
-// 		int startVirtualPage=Machine.processor().pageFromAddress(vaddr);
-// 		int endVirtualPage=Machine.processor().pageFromAddress(endVAddr);
-// 		for(int i=startVirtualPage;i<=endVirtualPage;i++){
-// 			if(!pageSearch(i).valid){
-// 				break;
-// 			}
-// 			int pageStartVirtualAddress=Machine.processor().makeAddress(i, 0);
-// 			int pageEndVirtualAddress=Machine.processor().makeAddress(i, pageSize-1);
-// 			int addrOffset;
-// 			int amount=0;
-// 			if(vaddr>pageStartVirtualAddress&&endVAddr<pageEndVirtualAddress){
-// 				addrOffset=vaddr-pageStartVirtualAddress;
-// 				amount=length;
-// 			}else if(vaddr<=pageStartVirtualAddress&&endVAddr<pageEndVirtualAddress){
-// 				addrOffset=0;
-// 				amount=endVAddr-pageStartVirtualAddress+1;
-// 			}else if(vaddr>pageStartVirtualAddress&&endVAddr>=pageEndVirtualAddress){
-// 				addrOffset=vaddr-pageStartVirtualAddress;
-// 				amount=pageEndVirtualAddress-vaddr+1;
-// 			}else{
-// 				addrOffset=0;
-// 				amount=pageSize;
-// 			}
-// 			int paddr=Machine.processor().makeAddress(pageSearch(i).ppn, addrOffset);
-// 			System.arraycopy(memory, paddr, data, offset+transferredCounter, amount);
-// 			transferredCounter+=amount;
-// //			pageTable[i].used=true;
-
-// 		}
-
-
-
-// 		return transferredCounter;
+		int bytes = 0;
+		int n = 1024;
+		
+		while (offset < data.length && length > 0) {
+			int virPage = vaddr / n;
+			int addressOffset = vaddr % n;
+			
+			if (virPage < 0 || virPage >= pageTable.length) {
+				break;
+			}
+			
+			TranslationEntry tran = pageTable[virPage];
+			
+			if (!tran.valid) 
+				break;
+			
+			tran.used = true;
+			
+			int phyPage = tran.ppn;
+			int phyAddr = (phyPage * n) + addressOffset;
+			
+			// remaining amount smallest from remaining;
+			int amount = Math.min(data.length - offset, Math.min(length, n - addressOffset));
+			
+			System.arraycopy(memory, phyAddr, data, offset, amount);
+			
+			vaddr = vaddr + amount;
+			offset = offset + amount;
+			length -= amount;
+			
+			bytes = bytes + amount;
+			
+		}
+		
+		return bytes;
 		
 		
 // 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
@@ -526,58 +513,48 @@ public class UserProcess {
 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
 		byte[] memory = Machine.processor().getMemory();
-	
-		// for now, just assume that virtual addresses equal physical addresses
-		if (vaddr < 0 || vaddr >= memory.length)
-	    		return 0;
-
-		int amount = Math.min(length, memory.length-vaddr);
-		System.arraycopy(data, offset, memory, vaddr, amount);
-
-		return amount;
 		
-// 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
-
-// 		byte[] memory = Machine.processor().getMemory();
-
-// 		// for now, just assume that virtual addresses equal physical addresses
-// 		if (vaddr < 0 || vaddr >= memory.length)
-// 			return 0;
+		int bytes = 0;
+		int n = 1024;
 		
-// 		int transferredCounter=0;
-// 		int endVAddr=vaddr+length-1;//
-// 		int startVirtualPage=Machine.processor().pageFromAddress(vaddr);
-// 		int endVirtualPage=Machine.processor().pageFromAddress(endVAddr);
-// 		for(int i=startVirtualPage;i<=endVirtualPage;i++){
-// 			if(!pageSearch(i).valid || pageSearch(i).readOnly){
-// 				break;
-// 			}
-// 			int pageStartVirtualAddress=Machine.processor().makeAddress(i, 0);
-// 			int pageEndVirtualAddress=Machine.processor().makeAddress(i, pageSize-1);
-// 			int addrOffset;
-// 			int amount=0;
-// 			if(vaddr>pageStartVirtualAddress&&endVAddr<pageEndVirtualAddress){
-// 				addrOffset=vaddr-pageStartVirtualAddress;
-// 				amount=length;
-// 			}else if(vaddr>pageStartVirtualAddress&&endVAddr>=pageEndVirtualAddress){
-// 				addrOffset=vaddr-pageStartVirtualAddress;
-// 				amount=pageEndVirtualAddress-vaddr+1;
-// 			}else if(vaddr<=pageStartVirtualAddress&&endVAddr<pageEndVirtualAddress){
-// 				addrOffset=0;
-// 				amount=endVAddr-pageStartVirtualAddress+1;
-// 			}else{
-// 				addrOffset=0;
-// 				amount=pageSize;
-// 			}
-// 			int paddr=Machine.processor().makeAddress(pageSearch(i).ppn, addrOffset);
-// 			System.arraycopy(data, offset+transferredCounter, memory, paddr, amount);
-// 			transferredCounter+=amount;
-// //			pageTable[i].used=true;
-// //			pageTable[i].dirty=true;
-// 		}
-
-
-// 		return transferredCounter;
+		while (offset < data.length && length > 0) {
+			int virPage = vaddr / n;
+			int addressOffset = vaddr % n;
+			
+			if (virPage < 0 || virPage >= pageTable.length) {
+				break;
+			}
+			
+			TranslationEntry tran = pageTable[virPage];
+			
+//			if (!tran.valid) 
+//				break;
+			
+			// insetad check if it's read only;
+			if (!tran.valid || tran.readOnly) 
+				break;
+			
+			
+			tran.used = true;
+			tran.dirty = true;
+			
+			int phyPage = tran.ppn;
+			int phyAddr = (phyPage * n) + addressOffset;
+			
+			// remaining amount smallest from remaining;
+			int amount = Math.min(data.length - offset, Math.min(length, n - addressOffset));
+			
+			System.arraycopy(data, offset, memory, phyAddr, amount);
+			
+			vaddr = vaddr + amount;
+			offset = offset + amount;
+			length -= amount;
+			
+			bytes = bytes + amount;
+			
+		}
+		
+		return bytes;
 // 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
 // 		byte[] memory = Machine.processor().getMemory();
