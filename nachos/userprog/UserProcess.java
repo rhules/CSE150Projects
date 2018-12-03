@@ -256,7 +256,8 @@ public class UserProcess {
 	 * @return	the string read, or <tt>null</tt> if no null terminator was
 	 *		found.
 	 */
-	public String readVirtualMemoryString(int vaddr, int maxLength) {
+	public String 
+		MemoryString(int vaddr, int maxLength) {
 		Lib.assertTrue(maxLength >= 0);
 
 		byte[] bytes = new byte[maxLength+1];
@@ -303,8 +304,6 @@ public class UserProcess {
 
 		byte[] memory = Machine.processor().getMemory();
 
-
-
 		// for now, just assume that virtual addresses equal physical addresses
 		//		if (vaddr < 0 || vaddr >= memory.length)
 		//			return 0;
@@ -315,7 +314,7 @@ public class UserProcess {
 		}
 
 		// if length is too big, then cut it off;
-		if (data.length - offset < length) {
+		if ((data.length - offset) < length) {
 			length = data.length - offset;
 		}
 
@@ -327,7 +326,7 @@ public class UserProcess {
 			int pageNumber = Processor.pageFromAddress(vaddr + bytes);
 
 			// page number should not be grater than the page size and should not be negative;
-			if (pageTable.length <= pageNumber || pageNumber < 0) {
+			if (pageNumber >= pageTable.length || pageNumber < 0) {
 				return 0;
 			}
 
@@ -341,7 +340,7 @@ public class UserProcess {
 			int amount = Math.min(bytesRemaining, length - bytes);
 
 			// calculate physical address;
-			int phyAddr = pageTable[pageNumber].ppn * pageSize + calcOffset;
+			int phyAddr = (pageTable[pageNumber].ppn * pageSize) + calcOffset;
 
 			// now move from what's stored in the physical address to virtual mem;
 			System.arraycopy(memory, phyAddr, data, offset + bytes, amount);
@@ -352,9 +351,8 @@ public class UserProcess {
 		} while(bytes < length);
 
 		return bytes;
-
-
 	}
+
 
 	/**
 	 * Transfer all data from the specified array to this process's virtual
