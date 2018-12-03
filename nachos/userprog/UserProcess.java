@@ -89,6 +89,14 @@ public class UserProcess {
 
 	public int exec(int address) {
 		String[] av = new String[argc];
+		int off = 0;
+		for(String s:av) {
+			byte[] temp = s.getBytes();
+			readVirtualMemory(argv, temp, off, argc);
+			off += s.length()*4;
+			s = temp.toString();
+			
+		}
 		//int transferred = readVirtualMemory(argv, av.getBytes(), 0, argc);
 		String file = readVirtualMemoryString(address, 256);
 
@@ -566,7 +574,7 @@ public class UserProcess {
 	 * Release any resources allocated by <tt>loadSections()</tt>.
 	 */
 	protected void unloadSections() {
-	}    
+	}
 
 	/**
 	 * Initialize the processor's registers in preparation for running the
