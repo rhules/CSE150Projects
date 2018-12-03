@@ -272,20 +272,20 @@ public class UserProcess {
 		return null;
 	}
 	
-	protected TranslationEntry pageSearch(int vpn) {
-		if (pageTable == null) {
-			return null;
-		}
+// 	protected TranslationEntry pageSearch(int vpn) {
+// 		if (pageTable == null) {
+// 			return null;
+// 		}
 		
-		if (vpn < pageTable.length && vpn >= 0) {
-			return pageTable[vpn];
-		}
+// 		if (vpn < pageTable.length && vpn >= 0) {
+// 			return pageTable[vpn];
+// 		}
 		
-		else {
-			return null;
-		}
+// 		else {
+// 			return null;
+// 		}
 		
-	}
+// 	}
 	
 	public String readVirtualMemoryString(int vaddr, int maxLength) {
 		Lib.assertTrue(maxLength >= 0);
@@ -332,7 +332,7 @@ public class UserProcess {
 	public int readVirtualMemory(int vaddr, byte[] data, int offset,
 			int length) {
 		
-			Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
+		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
 		byte[] memory = Machine.processor().getMemory();
 	
@@ -523,7 +523,7 @@ public class UserProcess {
 	public int writeVirtualMemory(int vaddr, byte[] data, int offset,
 			int length) {
 		
-			Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
+		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
 		byte[] memory = Machine.processor().getMemory();
 	
@@ -745,63 +745,63 @@ public class UserProcess {
 		// modified
 		// disable system interrupts
 		
-		boolean status = Machine.interrupt().disable();
+		// boolean status = Machine.interrupt().disable();
 		
 		//UserKernel.memoryLock.acquire(); // acquire lock
 		// checks		
 		
-		if (numPages > Machine.processor().getNumPhysPages()) {
-			coff.close();
-			Lib.debug(dbgProcess, "\tinsufficient physical memory");
+// 		if (numPages > Machine.processor().getNumPhysPages()) {
+// 			coff.close();
+// 			Lib.debug(dbgProcess, "\tinsufficient physical memory");
 			
-			// release lock
-			//UserKernel.memoryLock.release();
-			Machine.interrupt().restore(status);
+// 			// release lock
+// 			//UserKernel.memoryLock.release();
+// 			Machine.interrupt().restore(status);
 			
-			return false;
-		}
+// 			return false;
+// 		}
 		
-		// page table;
-		pageTable = new TranslationEntry[numPages];
+// 		// page table;
+// 		pageTable = new TranslationEntry[numPages];
 		
-		for (int i = 0; i < numPages; i++) {
-			// take out from the free list by removing;
-			int pageNext = UserKernel.memoryList.remove();
-			pageTable[i] = new TranslationEntry(i, pageNext, true, false, false, false);	
-		}
+// 		for (int i = 0; i < numPages; i++) {
+// 			// take out from the free list by removing;
+// 			int pageNext = UserKernel.memoryList.remove();
+// 			pageTable[i] = new TranslationEntry(i, pageNext, true, false, false, false);	
+// 		}
 		
-		// release lock
-		//UserKernel.memoryLock.release();
-		Machine.interrupt().restore(status);
+// 		// release lock
+// 		//UserKernel.memoryLock.release();
+// 		Machine.interrupt().restore(status);
 
-		// load sections
-		for (int s=0; s<coff.getNumSections(); s++) {
-			CoffSection section = coff.getSection(s);
+// 		// load sections
+// 		for (int s=0; s<coff.getNumSections(); s++) {
+// 			CoffSection section = coff.getSection(s);
 
-			Lib.debug(dbgProcess, "\tinitializing " + section.getName()
-			+ " section (" + section.getLength() + " pages)");
+// 			Lib.debug(dbgProcess, "\tinitializing " + section.getName()
+// 			+ " section (" + section.getLength() + " pages)");
 
-			for (int i=0; i<section.getLength(); i++) {
-				int vpn = section.getFirstVPN()+i;
+// 			for (int i=0; i<section.getLength(); i++) {
+// 				int vpn = section.getFirstVPN()+i;
 
-				// for now, just assume virtual addresses=physical addresses
-				//section.loadPage(i, vpn);
-				/* TranslationEntry entry = pageTable[vpn];
-				entry.readOnly = section.isReadOnly();
-				int ppn = entry.ppn;
+// 				// for now, just assume virtual addresses=physical addresses
+// 				//section.loadPage(i, vpn);
+// 				/* TranslationEntry entry = pageTable[vpn];
+// 				entry.readOnly = section.isReadOnly();
+// 				int ppn = entry.ppn;
 
-				section.loadPage(i, ppn); */
+// 				section.loadPage(i, ppn); */
 				
-				// label it as read only;
-				pageTable[vpn].readOnly = section.isReadOnly();
-				// add to physical page table;
-				section.loadPage(i, pageTable[vpn].ppn);
+// 				// label it as read only;
+// 				pageTable[vpn].readOnly = section.isReadOnly();
+// 				// add to physical page table;
+// 				section.loadPage(i, pageTable[vpn].ppn);
 				
 				
-			}
-		}
+// 			}
+// 		}
 
-		return true;
+// 		return true;
 		
 //		if (numPages > Machine.processor().getNumPhysPages()) {
 //		    coff.close();
@@ -824,6 +824,31 @@ public class UserProcess {
 //		    }
 //		}
 //		return true;
+		
+		
+	if (numPages > Machine.processor().getNumPhysPages()) {
+	    coff.close();
+	    Lib.debug(dbgProcess, "\tinsufficient physical memory");
+	    return false;
+	}
+
+	// load sections
+	for (int s=0; s<coff.getNumSections(); s++) {
+	    CoffSection section = coff.getSection(s);
+	    
+	    Lib.debug(dbgProcess, "\tinitializing " + section.getName()
+		      + " section (" + section.getLength() + " pages)");
+
+	    for (int i=0; i<section.getLength(); i++) {
+		int vpn = section.getFirstVPN()+i;
+
+		// for now, just assume virtual addresses=physical addresses
+		section.loadPage(i, vpn);
+	    }
+	}
+	
+	return true;
+		
 		
 	}
 
