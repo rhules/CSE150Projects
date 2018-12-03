@@ -22,7 +22,7 @@ public class UserKernel extends ThreadedKernel {
 		
 		//for (int i = 0; i < 1024; i++) {
 		//	memoryList.add(i);
-		}
+		//}
 	}
 
 	/**
