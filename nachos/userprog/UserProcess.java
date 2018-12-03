@@ -332,54 +332,67 @@ public class UserProcess {
 	public int readVirtualMemory(int vaddr, byte[] data, int offset,
 			int length) {
 		
-				
-		Lib.assertTrue(offset >= 0 && length >= 0
-				&& offset + length <= data.length);
+			Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
 		byte[] memory = Machine.processor().getMemory();
-
+	
 		// for now, just assume that virtual addresses equal physical addresses
-		if (vaddr < 0 || vaddr +length-1>Machine.processor().makeAddress(numPages-1, pageSize-1)){
-			Lib.debug(dbgProcess, "readVirtualMemory:Invalid virtual Address");
-			return 0;
-		}
+		if (vaddr < 0 || vaddr >= memory.length)
+	    return 0;
+
+		int amount = Math.min(length, memory.length-vaddr);
+		System.arraycopy(memory, vaddr, data, offset, amount);
+
+		return amount;
+		
+				
+// 		Lib.assertTrue(offset >= 0 && length >= 0
+// 				&& offset + length <= data.length);
+
+// 		byte[] memory = Machine.processor().getMemory();
+
+// 		// for now, just assume that virtual addresses equal physical addresses
+// 		if (vaddr < 0 || vaddr +length-1>Machine.processor().makeAddress(numPages-1, pageSize-1)){
+// 			Lib.debug(dbgProcess, "readVirtualMemory:Invalid virtual Address");
+// 			return 0;
+// 		}
 
 
-		int transferredCounter=0;
-		int endVAddr=vaddr+length-1;
-		int startVirtualPage=Machine.processor().pageFromAddress(vaddr);
-		int endVirtualPage=Machine.processor().pageFromAddress(endVAddr);
-		for(int i=startVirtualPage;i<=endVirtualPage;i++){
-			if(!pageSearch(i).valid){
-				break;
-			}
-			int pageStartVirtualAddress=Machine.processor().makeAddress(i, 0);
-			int pageEndVirtualAddress=Machine.processor().makeAddress(i, pageSize-1);
-			int addrOffset;
-			int amount=0;
-			if(vaddr>pageStartVirtualAddress&&endVAddr<pageEndVirtualAddress){
-				addrOffset=vaddr-pageStartVirtualAddress;
-				amount=length;
-			}else if(vaddr<=pageStartVirtualAddress&&endVAddr<pageEndVirtualAddress){
-				addrOffset=0;
-				amount=endVAddr-pageStartVirtualAddress+1;
-			}else if(vaddr>pageStartVirtualAddress&&endVAddr>=pageEndVirtualAddress){
-				addrOffset=vaddr-pageStartVirtualAddress;
-				amount=pageEndVirtualAddress-vaddr+1;
-			}else{
-				addrOffset=0;
-				amount=pageSize;
-			}
-			int paddr=Machine.processor().makeAddress(pageSearch(i).ppn, addrOffset);
-			System.arraycopy(memory, paddr, data, offset+transferredCounter, amount);
-			transferredCounter+=amount;
-//			pageTable[i].used=true;
+// 		int transferredCounter=0;
+// 		int endVAddr=vaddr+length-1;
+// 		int startVirtualPage=Machine.processor().pageFromAddress(vaddr);
+// 		int endVirtualPage=Machine.processor().pageFromAddress(endVAddr);
+// 		for(int i=startVirtualPage;i<=endVirtualPage;i++){
+// 			if(!pageSearch(i).valid){
+// 				break;
+// 			}
+// 			int pageStartVirtualAddress=Machine.processor().makeAddress(i, 0);
+// 			int pageEndVirtualAddress=Machine.processor().makeAddress(i, pageSize-1);
+// 			int addrOffset;
+// 			int amount=0;
+// 			if(vaddr>pageStartVirtualAddress&&endVAddr<pageEndVirtualAddress){
+// 				addrOffset=vaddr-pageStartVirtualAddress;
+// 				amount=length;
+// 			}else if(vaddr<=pageStartVirtualAddress&&endVAddr<pageEndVirtualAddress){
+// 				addrOffset=0;
+// 				amount=endVAddr-pageStartVirtualAddress+1;
+// 			}else if(vaddr>pageStartVirtualAddress&&endVAddr>=pageEndVirtualAddress){
+// 				addrOffset=vaddr-pageStartVirtualAddress;
+// 				amount=pageEndVirtualAddress-vaddr+1;
+// 			}else{
+// 				addrOffset=0;
+// 				amount=pageSize;
+// 			}
+// 			int paddr=Machine.processor().makeAddress(pageSearch(i).ppn, addrOffset);
+// 			System.arraycopy(memory, paddr, data, offset+transferredCounter, amount);
+// 			transferredCounter+=amount;
+// //			pageTable[i].used=true;
 
-		}
+// 		}
 
 
 
-		return transferredCounter;
+// 		return transferredCounter;
 		
 		
 // 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
@@ -510,48 +523,61 @@ public class UserProcess {
 	public int writeVirtualMemory(int vaddr, byte[] data, int offset,
 			int length) {
 		
-		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
+			Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
 		byte[] memory = Machine.processor().getMemory();
-
+	
 		// for now, just assume that virtual addresses equal physical addresses
 		if (vaddr < 0 || vaddr >= memory.length)
-			return 0;
+	    		return 0;
+
+		int amount = Math.min(length, memory.length-vaddr);
+		System.arraycopy(data, offset, memory, vaddr, amount);
+
+		return amount;
 		
-		int transferredCounter=0;
-		int endVAddr=vaddr+length-1;//
-		int startVirtualPage=Machine.processor().pageFromAddress(vaddr);
-		int endVirtualPage=Machine.processor().pageFromAddress(endVAddr);
-		for(int i=startVirtualPage;i<=endVirtualPage;i++){
-			if(!pageSearch(i).valid || pageSearch(i).readOnly){
-				break;
-			}
-			int pageStartVirtualAddress=Machine.processor().makeAddress(i, 0);
-			int pageEndVirtualAddress=Machine.processor().makeAddress(i, pageSize-1);
-			int addrOffset;
-			int amount=0;
-			if(vaddr>pageStartVirtualAddress&&endVAddr<pageEndVirtualAddress){
-				addrOffset=vaddr-pageStartVirtualAddress;
-				amount=length;
-			}else if(vaddr>pageStartVirtualAddress&&endVAddr>=pageEndVirtualAddress){
-				addrOffset=vaddr-pageStartVirtualAddress;
-				amount=pageEndVirtualAddress-vaddr+1;
-			}else if(vaddr<=pageStartVirtualAddress&&endVAddr<pageEndVirtualAddress){
-				addrOffset=0;
-				amount=endVAddr-pageStartVirtualAddress+1;
-			}else{
-				addrOffset=0;
-				amount=pageSize;
-			}
-			int paddr=Machine.processor().makeAddress(pageSearch(i).ppn, addrOffset);
-			System.arraycopy(data, offset+transferredCounter, memory, paddr, amount);
-			transferredCounter+=amount;
-//			pageTable[i].used=true;
-//			pageTable[i].dirty=true;
-		}
+// 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
+
+// 		byte[] memory = Machine.processor().getMemory();
+
+// 		// for now, just assume that virtual addresses equal physical addresses
+// 		if (vaddr < 0 || vaddr >= memory.length)
+// 			return 0;
+		
+// 		int transferredCounter=0;
+// 		int endVAddr=vaddr+length-1;//
+// 		int startVirtualPage=Machine.processor().pageFromAddress(vaddr);
+// 		int endVirtualPage=Machine.processor().pageFromAddress(endVAddr);
+// 		for(int i=startVirtualPage;i<=endVirtualPage;i++){
+// 			if(!pageSearch(i).valid || pageSearch(i).readOnly){
+// 				break;
+// 			}
+// 			int pageStartVirtualAddress=Machine.processor().makeAddress(i, 0);
+// 			int pageEndVirtualAddress=Machine.processor().makeAddress(i, pageSize-1);
+// 			int addrOffset;
+// 			int amount=0;
+// 			if(vaddr>pageStartVirtualAddress&&endVAddr<pageEndVirtualAddress){
+// 				addrOffset=vaddr-pageStartVirtualAddress;
+// 				amount=length;
+// 			}else if(vaddr>pageStartVirtualAddress&&endVAddr>=pageEndVirtualAddress){
+// 				addrOffset=vaddr-pageStartVirtualAddress;
+// 				amount=pageEndVirtualAddress-vaddr+1;
+// 			}else if(vaddr<=pageStartVirtualAddress&&endVAddr<pageEndVirtualAddress){
+// 				addrOffset=0;
+// 				amount=endVAddr-pageStartVirtualAddress+1;
+// 			}else{
+// 				addrOffset=0;
+// 				amount=pageSize;
+// 			}
+// 			int paddr=Machine.processor().makeAddress(pageSearch(i).ppn, addrOffset);
+// 			System.arraycopy(data, offset+transferredCounter, memory, paddr, amount);
+// 			transferredCounter+=amount;
+// //			pageTable[i].used=true;
+// //			pageTable[i].dirty=true;
+// 		}
 
 
-		return transferredCounter;
+// 		return transferredCounter;
 // 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
 // 		byte[] memory = Machine.processor().getMemory();
