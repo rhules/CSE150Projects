@@ -293,7 +293,7 @@ public class KThread {
 
 
 	// queue for threads waiting to be joined;
-	private static ThreadQueue waitList = null;
+	protected static ThreadQueue waitList = null;
 	// private int count = 0; // strictly control/allow join() to be called only once; 
 
 	public void join() {

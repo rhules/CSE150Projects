@@ -56,7 +56,7 @@ public class UThread extends KThread {
 
 		process.restoreState();
 	}
-	private static ThreadQueue waitList = null;
+	
 	public void join(int status, UserProcess child) {
 		//Lib.debug(dbgThread, "Joining to thread: " + toString());
 		Lib.assertTrue(this != KThread.currentThread());
@@ -81,24 +81,6 @@ public class UThread extends KThread {
 		}
 
 		Machine.interrupt().restore(machineStatus);
-
-		//		int tempCount = count + 1;
-		//
-		//		// check to see if this method is already called
-		//		if (tempCount != 1) {
-		//			return;
-		//		}
-		//
-		//		boolean status = Machine.interrupt().disable();
-		//
-		//		waitList.acquire(this);
-		//		waitList.waitForAccess(currentThread);
-		//
-		//		// let current thread sleep
-		//		KThread.sleep();
-		//
-		//		// restore interrupts
-		//		Machine.interrupt().restore(status);
 
 	}
 
