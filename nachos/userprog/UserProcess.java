@@ -295,7 +295,7 @@ public class UserProcess {
 
 		byte[] memory = Machine.processor().getMemory();
 		
-		/*byte[] memory = Machine.processor().getMemory();
+		
 
 		// for now, just assume that virtual addresses equal physical addresses
 //		if (vaddr < 0 || vaddr >= memory.length)
@@ -336,23 +336,16 @@ public class UserProcess {
 			int phyAddr = pageTable[pageNumber].ppn * pageSize + calcOffset;
 			
 			// now move from what's stored in the physical address to virtual mem;
-			System.arraycopy(memory, phyAddr, data, offset + bytes, length);
+			System.arraycopy(memory, phyAddr, data, offset + bytes, amount);
 			
 			// fix what's successfully transferred;
 			bytes = bytes + amount;
 		
 		} while(bytes < length);
 
-		return bytes;*/
+		return bytes;
 
-		// for now, just assume that virtual addresses equal physical addresses
-		if (vaddr < 0 || vaddr >= memory.length)
-			return 0;
-
-		int amount = Math.min(length, memory.length-vaddr);
-		System.arraycopy(memory, vaddr, data, offset, amount);
-
-		return amount;
+		
 	}
 
 	/**
@@ -389,13 +382,42 @@ public class UserProcess {
 		byte[] memory = Machine.processor().getMemory();
 
 		// for now, just assume that virtual addresses equal physical addresses
-		if (vaddr < 0 || vaddr >= memory.length)
+		//if (vaddr < 0 || vaddr >= memory.length)
+		//	return 0;
+
+		int bytes = 0;
+	
+	do {
+		// calculate page number;
+		int pageNumber = Processor.pageFromAddress(vaddr + bytes);
+		
+		/* page number should not be grater than the page size and should
+		   not be negative; */
+		if (pageTable.length <= pageNumber || pageNumber < 0) {
 			return 0;
+			}
+		
+		// calculate page offset;
+		int calcOffset = Processor.offsetFromAddress(vaddr + bytes);
+		
+		// now calculate the remaining amount;
+		int bytesRemaining = pageSize - calcOffset;
+		
+		// and calculate the next amount: the min of what's remaining;
+		int amount = Math.min(bytesRemaining, length - bytes);
+		
+		// calculate physical address;
+		int phyAddr = pageTable[pageNumber].ppn * pageSize + calcOffset;
+		
+		// now move from what's stored in the physical address to virtual mem;
+		System.arraycopy(data, calcOffset + bytes, memory, phyAddr, amount);
+		
+		// fix what's successfully transferred;
+		bytes = bytes + amount;
+	
+	} while(bytes < length);
 
-		int amount = Math.min(length, memory.length-vaddr);
-		System.arraycopy(data, offset, memory, vaddr, amount);
-
-		return amount;
+	return bytes;
 	}
 	
 	public boolean manageParent(int parID, boolean add) {
@@ -528,7 +550,12 @@ public class UserProcess {
 				int vpn = section.getFirstVPN()+i;
 
 				// for now, just assume virtual addresses=physical addresses
-				section.loadPage(i, vpn);
+				//section.loadPage(i, vpn);
+				TranslationEntry entry = pageTable[vpn];                             
+        			entry.readOnly = section.isReadOnly();                                     
+        			int ppn = entry.ppn;                                                       
+        
+        			section.loadPage(i, ppn); 
 			}
 		}
 
