@@ -391,6 +391,14 @@ public class UserProcess {
 		//if (vaddr < 0 || vaddr >= memory.length)
 		//	return 0;
 
+		if (length > (pageSize * numPages - vaddr)) {
+			length = (pageSize * numPages) - vaddr;
+		}
+		
+		if ((data.length - offset) < length) {
+			length = data.length - offset;
+		}
+		
 		int bytes = 0;
 
 		do {
@@ -399,7 +407,7 @@ public class UserProcess {
 
 			/* page number should not be grater than the page size and should
 		   not be negative; */
-			if (pageTable.length <= pageNumber || pageNumber < 0) {
+			if (pageNumber >= pageTable.length || pageNumber < 0) {
 				return 0;
 			}
 
@@ -413,10 +421,10 @@ public class UserProcess {
 			int amount = Math.min(bytesRemaining, length - bytes);
 
 			// calculate physical address;
-			int phyAddr = pageTable[pageNumber].ppn * pageSize + calcOffset;
+			int phyAddr = (pageTable[pageNumber].ppn * pageSize) + calcOffset;
 
 			// now move from what's stored in the physical address to virtual mem;
-			System.arraycopy(data, calcOffset + bytes, memory, phyAddr, amount);
+			System.arraycopy(data, offset + bytes, memory, phyAddr, amount);
 
 			// fix what's successfully transferred;
 			bytes = bytes + amount;
