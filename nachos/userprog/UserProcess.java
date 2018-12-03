@@ -160,13 +160,23 @@ public class UserProcess {
 			else {
 				Machine.interrupt().restore(machineStatus);
 				//sleep
+				UserProcess temp = children.element();
+				for(UserProcess i:children) {
+					if(i.pID == processID) {
+						temp = i;
+					}
+				}
 				for(UThread i:threads) {
-					i.join();
+					i.join(status, temp);
 				}
 			}
 			//return 1;
 		}
 		return -1;
+	}
+	
+	public UThread getFirstThread() {
+		return threads.element();
 	}
 	
 	/**
@@ -277,6 +287,56 @@ public class UserProcess {
 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
 		byte[] memory = Machine.processor().getMemory();
+		
+		/*byte[] memory = Machine.processor().getMemory();
+
+		// for now, just assume that virtual addresses equal physical addresses
+//		if (vaddr < 0 || vaddr >= memory.length)
+//			return 0;
+		
+		
+		if (length > (pageSize * numPages - vaddr)) {
+			length = pageSize * numPages - vaddr;
+		}
+		
+		// if length is too big, then cut it off;
+		if (data.length - offset < length) {
+			length = data.length - offset;
+		}
+		
+		// successfully transferred bytes;
+		int bytes = 0;
+		
+		do {
+			// calculate page number;
+			int pageNumber = Processor.pageFromAddress(vaddr + bytes);
+			
+			// page number should not be grater than the page size and should not be negative;
+			if (pageTable.length <= pageNumber || pageNumber < 0) {
+				return 0;
+				}
+			
+			// calculate page offset;
+			int calcOffset = Processor.offsetFromAddress(vaddr + bytes);
+			
+			// now calculate the remaining amount;
+			int bytesRemaining = pageSize - calcOffset;
+			
+			// and calculate the next amount: the min of what's remaining;
+			int amount = Math.min(bytesRemaining, length - bytes);
+			
+			// calculate physical address;
+			int phyAddr = pageTable[pageNumber].ppn * pageSize + calcOffset;
+			
+			// now move from what's stored in the physical address to virtual mem;
+			System.arraycopy(memory, phyAddr, data, offset + bytes, length);
+			
+			// fix what's successfully transferred;
+			bytes = bytes + amount;
+		
+		} while(bytes < length);
+
+		return bytes;*/
 
 		// for now, just assume that virtual addresses equal physical addresses
 		if (vaddr < 0 || vaddr >= memory.length)

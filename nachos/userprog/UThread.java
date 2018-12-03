@@ -56,8 +56,8 @@ public class UThread extends KThread {
 
 		process.restoreState();
 	}
-	/*private static ThreadQueue waitList = null;
-	public void join() {
+	private static ThreadQueue waitList = null;
+	public void join(int status, UserProcess child) {
 		//Lib.debug(dbgThread, "Joining to thread: " + toString());
 		Lib.assertTrue(this != KThread.currentThread());
 
@@ -71,13 +71,13 @@ public class UThread extends KThread {
 			waitList = ThreadedKernel.scheduler.newThreadQueue(true);
 		}
 
-		if (this.process.status == 4) {
+		if (status == 0) {
 			return;
 		} else {
 			
 			waitList.acquire(this);
-			waitList.waitForAccess(currentThread);
-			KThread.sleep();
+			waitList.waitForAccess(child.getFirstThread());
+			sleep();
 		}
 
 		Machine.interrupt().restore(machineStatus);
@@ -100,7 +100,7 @@ public class UThread extends KThread {
 		//		// restore interrupts
 		//		Machine.interrupt().restore(status);
 
-	}*/
+	}
 
 	/**
 	 * Storage for the user register set.
