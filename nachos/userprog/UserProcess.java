@@ -837,25 +837,26 @@ public class UserProcess {
 
 		pageTable = new TranslationEntry[numPages];
 		
-		for (int j = 0; j < numPages; j++) {
+		for (int i = 0; i < numPages; i++) {
 			int physicalPage = UserKernel.addPage();
 			
 			if (physicalPage < 0) {
-				for (int i = 0; i < j; i++) {
+				for (int j = 0; j < i; j++) {
 					
-					if(pageTable[i].valid == true) {
-						UserKernel.removePage(pageTable[i].ppn);
-						pageTable[i].valid = false;
+					if(pageTable[j].valid == true) {
+						UserKernel.removePage(pageTable[j].ppn);
+						pageTable[j].valid = false;
 					}
-					
-					coff.close();
-					return false;
 					
 				}
 				
-				pageTable[j] = new TranslationEntry (j, physicalPage, true, false, false, false);
-				
+				coff.close();
+				return false;
+			
 			}
+				
+			pageTable[i] = new TranslationEntry (i, physicalPage, true, false, false, false);
+				
 		}
 		
  		// load sections
@@ -874,12 +875,10 @@ public class UserProcess {
  				entry.readOnly = section.isReadOnly();
  				int ppn = entry.ppn; */
  				
- 				section.loadPage(i, pageTable[vpn].ppn);
  				if(section.isReadOnly() == true) {
  					pageTable[vpn].readOnly = true;}
  				}
  		}
- 		
 		
  		coff.close();
 		return true;
