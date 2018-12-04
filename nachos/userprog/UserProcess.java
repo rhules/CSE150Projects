@@ -88,22 +88,10 @@ public class UserProcess {
 	 */
 
 	public int exec(int address) {
-		String[] av = new String[argc];
-		int off = 0;
-		for(String s:av) {
-			byte[] temp = s.getBytes();
-			readVirtualMemory(argv, temp, off, argc);
-			off += s.length()*4;
-			s = temp.toString();
-			
-		}
-		//int transferred = readVirtualMemory(argv, av.getBytes(), 0, argc);
 		String file = readVirtualMemoryString(address, 256);
 
 		// cannot open file does not exist. 
-		if(file == null||!file.endsWith(".coff")||!load(file, av)||argc < 0 || argv > numPages * pageSize) {
-			return -1;
-		}
+
 
 		String[] arg = new String[argc];
 
@@ -117,6 +105,9 @@ public class UserProcess {
 				arg[i] = readVirtualMemoryString(Lib.bytesToInt(argAddr, 0), 256);
 			}
 		}
+		if(file == null||!file.endsWith(".coff")||!load(file, arg)||argc < 0 || argv > numPages * pageSize) {
+			return -1;
+		}
 
 		UserProcess temp = UserProcess.newUserProcess();
 
@@ -124,7 +115,8 @@ public class UserProcess {
 		if (!temp.execute(file, arg)) {
 			return -1;
 		}
-
+		
+		//add new process as a child
 		temp.manageParent(this.pID, true);
 		this.children.add(temp);
 
