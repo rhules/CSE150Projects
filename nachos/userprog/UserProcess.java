@@ -402,13 +402,15 @@ public class UserProcess {
 			int phyAddr = (phyPage * n) + addressOffset;
 
 			// remaining amount smallest from remaining;
-			int amount = Math.min(data.length - offset, Math.min(length, n - addressOffset));
+			//int amount = Math.min(data.length - offset, Math.min(length, n - addressOffset));
+			int max = (phyPage +1)*n
+			int amount = Math.min(max - phyAddr, Math.min(length, memory.length - phyAddr));
 
 			System.arraycopy(memory, phyAddr, data, offset, amount);
 
-			vaddr = vaddr + amount;
-			offset = offset + amount;
-			length -= amount;
+			//vaddr = vaddr + amount;
+			//offset = offset + amount;
+			//length -= amount;
 
 			bytes = bytes + amount;
 
@@ -615,15 +617,16 @@ public class UserProcess {
 
 			int phyPage = tran.ppn;
 			int phyAddr = (phyPage * n) + addressOffset;
-
+			int max = (phyPage +1)*n
+			int amount = Math.min(max - phyAddr, Math.min(length, memory.length - phyAddr));
 			// remaining amount smallest from remaining;
-			int amount = Math.min(data.length - offset, Math.min(length, n - addressOffset));
+			//int amount = Math.min(data.length - offset, Math.min(length, n - addressOffset));
 
 			System.arraycopy(data, offset, memory, phyAddr, amount);
 
-			vaddr = vaddr + amount;
-			offset = offset + amount;
-			length -= amount;
+			//vaddr = vaddr + amount;
+			//offset = offset + amount;
+			//length -= amount;
 
 			bytes = bytes + amount;
 
