@@ -798,9 +798,9 @@ public class UserProcess {
 			Lib.debug(dbgProcess, "\tinsufficient physical memory");
 			return false;
 		}
-		else if(numPages == 0) {
+		else if(numPages < 1) {
 			coff.close();
-			Lib.debug(dbgProcess, "\tinvalid page number");
+			Lib.debug(dbgProcess, "\tinvalid page amount");
 			return false;
 		}
 
