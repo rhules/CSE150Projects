@@ -998,17 +998,6 @@ public class UserProcess {
 	 * Release any resources allocated by <tt>loadSections()</tt>.
 	 */
 	protected void unloadSections() {
-		
-		for (int i = 0; i < numPages; i++) {
-			
-			if (pageTable[i] != null) {
-				pageTable[i].valid = false;
-				UserKernel.removePage(pageTable[i].ppn);
-			}
-			
-		}
-		
-		pageTable = null;
 	}
 
 	/**
