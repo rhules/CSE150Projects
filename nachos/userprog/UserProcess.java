@@ -46,7 +46,7 @@ public class UserProcess {
 		openFile[0] = UserKernel.console.openForReading();
 		openFile[1] = UserKernel.console.openForWriting();
 		UserKernel.processList.add(this);
-		this.threads = new LinkedList<UThread>();
+		//this.threads = new LinkedList<UThread>();
 		
 		
 		
@@ -80,7 +80,7 @@ public class UserProcess {
 
 		UThread temp = new UThread(this);
 		temp.setName(name).fork();
-		this.threads.add(temp);
+		this.thread = temp;
 
 		return true;
 	}
@@ -134,6 +134,7 @@ public class UserProcess {
 		}
 
 		temp.manageParent(this.pID, true);
+		this.children.put(temp.pID, temp);
 //		this.children.add(temp);
 
 		return temp.pID;
@@ -223,8 +224,8 @@ public class UserProcess {
 //		}
 //		return -1;
 
-	public UThread getFirstThread() {
-		return threads.element();
+	public UThread getThread() {
+		return thread;
 	}
 
 	/**
@@ -1299,8 +1300,8 @@ public class UserProcess {
 	}
 
 	//list of threads associated with this process
-	//private UThread thread;
-	private LinkedList<UThread> threads;
+	private UThread thread;
+	//private LinkedList<UThread> threads;
 
 	protected OpenFile[] openFile; 
 
@@ -1323,7 +1324,6 @@ public class UserProcess {
 	private int initialPC, initialSP;
 	private int argc, argv;
 	
-	private UThread thread;
 
 	private int state;
 	

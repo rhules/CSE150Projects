@@ -76,7 +76,7 @@ public class UThread extends KThread {
 		} else {
 			
 			waitList.acquire(this);
-			waitList.waitForAccess(child.getFirstThread());
+			waitList.waitForAccess(child.getThread());
 			sleep();
 		}
 
