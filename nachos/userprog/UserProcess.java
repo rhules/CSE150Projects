@@ -7,6 +7,7 @@ import nachos.userprog.*;
 import java.io.EOFException;
 import java.util.Vector;
 import java.util.Arrays;
+import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.Iterator;
 
@@ -31,10 +32,14 @@ public class UserProcess {
 		int numPhysPages = Machine.processor().getNumPhysPages();
 		pageTable = new TranslationEntry[numPhysPages];
 		pID = UserKernel.gPID++;
-		children = new LinkedList<UserProcess>();
+		//children = new LinkedList<UserProcess>();
+		children = new Hashtable<Integer, UserProcess>();
 		for (int i=0; i<numPhysPages; i++) 
 			pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
 
+
+		state = 1;
+		
 		// supports up to 16 files;
 		openFile = new OpenFile[16];
 
@@ -42,6 +47,9 @@ public class UserProcess {
 		openFile[1] = UserKernel.console.openForWriting();
 		UserKernel.processList.add(this);
 		this.threads = new LinkedList<UThread>();
+		
+		
+		
 	}
 
 	//Allocate a new process with a parent
@@ -88,10 +96,22 @@ public class UserProcess {
 	 */
 
 	public int exec(int address) {
+		String[] av = new String[argc];
+		int off = 0;
+		for(String s:av) {
+			byte[] temp = s.getBytes();
+			readVirtualMemory(argv, temp, off, argc);
+			off += s.length()*4;
+			s = temp.toString();
+			
+		}
+		//int transferred = readVirtualMemory(argv, av.getBytes(), 0, argc);
 		String file = readVirtualMemoryString(address, 256);
 
 		// cannot open file does not exist. 
-
+		if(file == null||!file.endsWith(".coff")||!load(file, av)||argc < 0 || argv > numPages * pageSize) {
+			return -1;
+		}
 
 		String[] arg = new String[argc];
 
@@ -105,9 +125,6 @@ public class UserProcess {
 				arg[i] = readVirtualMemoryString(Lib.bytesToInt(argAddr, 0), 256);
 			}
 		}
-		if(file == null||!file.endsWith(".coff")||!load(file, arg)||argc < 0 || argv > numPages * pageSize) {
-			return -1;
-		}
 
 		UserProcess temp = UserProcess.newUserProcess();
 
@@ -115,72 +132,96 @@ public class UserProcess {
 		if (!temp.execute(file, arg)) {
 			return -1;
 		}
-		
-		//add new process as a child
+
 		temp.manageParent(this.pID, true);
-		this.children.add(temp);
+//		this.children.add(temp);
 
 		return temp.pID;
 	}
 
-	public boolean isChild(int ID) {
-		Iterator<UserProcess> i = children.iterator();
-		while(i.hasNext()) {
-			if(i.next().pID == ID) {
-				return true;
-			}
-		}
-		return false;
-	}
+//	public boolean isChild(int ID) {
+//		Iterator<UserProcess> i = children.iterator();
+//		while(i.hasNext()) {
+//			if(i.next().pID == ID) {
+//				return true;
+//			}
+//		}
+//		return false;
+//	}
 
 	public int join(int processID, int status) {
 		//Lib.assertTrue(this != UserKernel.currentProcess());
-		if(this == UserKernel.currentProcess()) {
-			boolean machineStatus = Machine.interrupt().disable();
-			KThread.sleep();
-			Machine.interrupt().restore(machineStatus);
-		}
-
-		if(status == -1) {
-			return 0;
-		}
-		while(isChild(processID)) {
-
-			boolean machineStatus = Machine.interrupt().disable();
-			//return if the given process has ended
-			if(status == 0|| status == -1) {
-				for(UserProcess i:children) {
-					if(i.pID == processID) {
-						i.manageParent(this.pID, false);
-						children.remove(i);
-						if(status == 0) {
-							return 1;
-						}
-						else {
-							return 0;
-						}
-					}
+		
+		//if(this == UserKernel.currentProcess()) {
+		if (children.containsKey(processID)) {
+		
+			//boolean machineStatus = Machine.interrupt().disable();
+			UserProcess c = children.get(processID);
+			//KThread.sleep();
+			c.thread.join();
+			
+			//Machine.interrupt().restore(machineStatus);
+			
+			children.remove(processID);
+			
+			int check = writeVirtualMemory(status, Lib.bytesFromInt(c.state));
+			
+			
+			if (check == 4) {
+				return 1;
+				
+			} else {
+					return 0;
 				}
-				return -1;
 			}
-			else {
-
-				//sleep
-				UserProcess temp = children.element();
-				for(UserProcess i:children) {
-					if(i.pID == processID) {
-						temp = i;
-					}
-				}
-				for(UThread i:threads) {
-					i.join(status, temp);
-				}
-				Machine.interrupt().restore(machineStatus);
+		
+		else {
+			return -1;
 			}
-			//return 1;
 		}
-		return -1;
-	}
+
+//		if(status == -1) {
+//			return 0;
+//		}
+		
+
+		
+//		while(isChild(processID)) {
+//
+//			boolean machineStatus = Machine.interrupt().disable();
+//			//return if the given process has ended
+//			if(status == 0|| status == -1) {
+//				for(UserProcess i:children) {
+//					if(i.pID == processID) {
+//						i.manageParent(this.pID, false);
+//						children.remove(i);
+//						if(status == 0) {
+//							return 1;
+//						}
+//						else {
+//							return 0;
+//						}
+//					}
+//				}
+//				return -1;
+//			}
+//			else {
+//
+//				//sleep
+//				UserProcess temp = children.element();
+//				for(UserProcess i:children) {
+//					if(i.pID == processID) {
+//						temp = i;
+//					}
+//				}
+//				for(UThread i:threads) {
+//					i.join();
+//				}
+//				Machine.interrupt().restore(machineStatus);
+//			}
+//			//return 1;
+//		}
+//		return -1;
 
 	public UThread getFirstThread() {
 		return threads.element();
@@ -203,20 +244,36 @@ public class UserProcess {
 		//close any open files
 		for(int i = 15; i > 1; i--) {
 			if(openFile[i] != null) {
-				handleSyscall(8, i, 0, 0, 0);
+				//handleSyscall(8, i, 0, 0, 0);
+				openFile[i].close();
 			}
 		}
 		//disown children
-		for(UserProcess i: children) {
-			i.manageParent(this.pID, false);
-			children.remove(i);
-		}
-		//remove this process from the process list
-		UserKernel.processList.remove(this);
-		//If process list is empty, end simulation
-		if(UserKernel.processList.isEmpty()) {
+//		for(UserProcess i: children) {
+//			i.manageParent(this.pID, false);
+//			children.remove(i);
+//		}
+		
+		for (Integer i : children.keySet()) 
+			children.get(i).pID = -1;
+		
+		this.state = status;
+		this.unloadSections();
+		
+		if (this.pID == 0) {
 			Machine.terminate();
 		}
+		
+		else {
+			KThread.currentThread().finish();
+		}
+		
+		//remove this process from the process list
+//		UserKernel.processList.remove(this);
+//		//If process list is empty, end simulation
+//		if(UserKernel.processList.isEmpty()) {
+//			Machine.terminate();
+//		}
 	}
 
 	/**
@@ -323,7 +380,7 @@ public class UserProcess {
 	 */
 	public int readVirtualMemory(int vaddr, byte[] data, int offset,
 			int length) {
-		
+//		
 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
 		byte[] memory = Machine.processor().getMemory();
@@ -372,6 +429,58 @@ public class UserProcess {
 		}
 		
 		return bytes;
+		
+		
+		
+//		
+				
+// 		Lib.assertTrue(offset >= 0 && length >= 0
+// 				&& offset + length <= data.length);
+
+// 		byte[] memory = Machine.processor().getMemory();
+
+// 		// for now, just assume that virtual addresses equal physical addresses
+// 		if (vaddr < 0 || vaddr +length-1>Machine.processor().makeAddress(numPages-1, pageSize-1)){
+// 			Lib.debug(dbgProcess, "readVirtualMemory:Invalid virtual Address");
+// 			return 0;
+// 		}
+
+
+// 		int transferredCounter=0;
+// 		int endVAddr=vaddr+length-1;
+// 		int startVirtualPage=Machine.processor().pageFromAddress(vaddr);
+// 		int endVirtualPage=Machine.processor().pageFromAddress(endVAddr);
+// 		for(int i=startVirtualPage;i<=endVirtualPage;i++){
+// 			if(!pageSearch(i).valid){
+// 				break;
+// 			}
+// 			int pageStartVirtualAddress=Machine.processor().makeAddress(i, 0);
+// 			int pageEndVirtualAddress=Machine.processor().makeAddress(i, pageSize-1);
+// 			int addrOffset;
+// 			int amount=0;
+// 			if(vaddr>pageStartVirtualAddress&&endVAddr<pageEndVirtualAddress){
+// 				addrOffset=vaddr-pageStartVirtualAddress;
+// 				amount=length;
+// 			}else if(vaddr<=pageStartVirtualAddress&&endVAddr<pageEndVirtualAddress){
+// 				addrOffset=0;
+// 				amount=endVAddr-pageStartVirtualAddress+1;
+// 			}else if(vaddr>pageStartVirtualAddress&&endVAddr>=pageEndVirtualAddress){
+// 				addrOffset=vaddr-pageStartVirtualAddress;
+// 				amount=pageEndVirtualAddress-vaddr+1;
+// 			}else{
+// 				addrOffset=0;
+// 				amount=pageSize;
+// 			}
+// 			int paddr=Machine.processor().makeAddress(pageSearch(i).ppn, addrOffset);
+// 			System.arraycopy(memory, paddr, data, offset+transferredCounter, amount);
+// 			transferredCounter+=amount;
+// //			pageTable[i].used=true;
+
+// 		}
+
+
+
+// 		return transferredCounter;
 		
 		
 // 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
@@ -547,6 +656,13 @@ public class UserProcess {
 		}
 		
 		return bytes;
+		
+		
+	
+
+
+
+// 		return transferredCounter;
 // 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
 // 		byte[] memory = Machine.processor().getMemory();
@@ -1201,13 +1317,19 @@ public class UserProcess {
 	protected final int stackPages = 8;
 
 	//list of children
-	protected LinkedList <UserProcess> children;
-
+	// protected LinkedList <UserProcess> children;
+		protected Hashtable <Integer, UserProcess> children;
+	
 	private int initialPC, initialSP;
 	private int argc, argv;
+	
+	private UThread thread;
 
+	private int state;
+	
 	//ID of this process
 	private int pID;
+
 
 	//ID of the parent of this process, -1 means no parent
 	private int parentID = -1;
