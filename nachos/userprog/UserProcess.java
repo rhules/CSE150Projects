@@ -96,7 +96,7 @@ public class UserProcess {
 	 */
 
 	public int exec(int address) {
-		String[] av = new String[argc];
+		/*String[] av = new String[argc];
 		int off = 0;
 		for(String s:av) {
 			byte[] temp = s.getBytes();
@@ -104,14 +104,12 @@ public class UserProcess {
 			off += s.length()*4;
 			s = temp.toString();
 			
-		}
+		}*/
 		//int transferred = readVirtualMemory(argv, av.getBytes(), 0, argc);
 		String file = readVirtualMemoryString(address, 256);
 
 		// cannot open file does not exist. 
-		if(file == null||!file.endsWith(".coff")||!load(file, av)||argc < 0 || argv > numPages * pageSize) {
-			return -1;
-		}
+		
 
 		String[] arg = new String[argc];
 
@@ -125,9 +123,12 @@ public class UserProcess {
 				arg[i] = readVirtualMemoryString(Lib.bytesToInt(argAddr, 0), 256);
 			}
 		}
+		if(file == null||!file.endsWith(".coff")||!load(file, arg)||argc < 0 || argv > numPages * pageSize) {
+			return -1;
+		}
 
 		UserProcess temp = UserProcess.newUserProcess();
-
+		
 		// fail opening the file;
 		if (!temp.execute(file, arg)) {
 			return -1;
@@ -256,25 +257,26 @@ public class UserProcess {
 //		}
 		
 		for (Integer i : children.keySet()) 
-			children.get(i).pID = -1;
+			children.get(i).manageParent(this.pID, false);
 		
 		this.state = status;
 		this.unloadSections();
 		
-		if (this.pID == 0) {
+		UserKernel.processList.remove(this);
+		//If process list is empty, end simulation
+		if(UserKernel.processList.isEmpty()) {
 			Machine.terminate();
 		}
+//		if (this.pID == 0) {
+//			Machine.terminate();
+//		}
 		
 		else {
 			KThread.currentThread().finish();
 		}
 		
 		//remove this process from the process list
-//		UserKernel.processList.remove(this);
-//		//If process list is empty, end simulation
-//		if(UserKernel.processList.isEmpty()) {
-//			Machine.terminate();
-//		}
+
 	}
 
 	/**
@@ -306,8 +308,7 @@ public class UserProcess {
 	 * @return	the string read, or <tt>null</tt> if no null terminator was
 	 *		found.
 	 */
-	public String 
-		MemoryString(int vaddr, int maxLength) {
+	public String MemoryString(int vaddr, int maxLength) {
 		Lib.assertTrue(maxLength >= 0);
 
 		byte[] bytes = new byte[maxLength+1];
@@ -1351,7 +1352,8 @@ public class UserProcess {
 		default:
 			Lib.debug(dbgProcess, "Unexpected exception: " +
 					Processor.exceptionNames[cause]);
-			Lib.assertNotReached("Unexpected exception");
+			Lib.assertNotReached("Unexpected exception "+
+					Processor.exceptionNames[cause]);
 		}
 	}
 
