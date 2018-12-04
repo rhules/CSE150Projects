@@ -12,16 +12,16 @@ import java.util.LinkedList;
 import java.util.Iterator;
 
 /**
- * Encapsulates the state of a user process that is not contained in its
- * user thread (or threads). This includes its address translation state, a
- * file table, and information about the program being executed.
+ * Encapsulates the state of a user process that is not contained in its user
+ * thread (or threads). This includes its address translation state, a file
+ * table, and information about the program being executed.
  *
  * <p>
  * This class is extended by other classes to support additional functionality
  * (such as additional syscalls).
  *
- * @see	nachos.vm.VMProcess
- * @see	nachos.network.NetProcess
+ * @see nachos.vm.VMProcess
+ * @see nachos.network.NetProcess
  */
 public class UserProcess {
 
@@ -32,47 +32,42 @@ public class UserProcess {
 		int numPhysPages = Machine.processor().getNumPhysPages();
 		pageTable = new TranslationEntry[numPhysPages];
 		pID = UserKernel.gPID++;
-		//children = new LinkedList<UserProcess>();
+		// children = new LinkedList<UserProcess>();
 		children = new Hashtable<Integer, UserProcess>();
-		for (int i=0; i<numPhysPages; i++) 
-			pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
-
+		for (int i = 0; i < numPhysPages; i++)
+			pageTable[i] = new TranslationEntry(i, i, true, false, false, false);
 
 		state = 1;
-		
+
 		// supports up to 16 files;
 		openFile = new OpenFile[16];
 
 		openFile[0] = UserKernel.console.openForReading();
 		openFile[1] = UserKernel.console.openForWriting();
 		UserKernel.processList.add(this);
-		//this.threads = new LinkedList<UThread>();
-		
-		
-		
+		// this.threads = new LinkedList<UThread>();
+
 	}
 
-	//Allocate a new process with a parent
-
+	// Allocate a new process with a parent
 
 	/**
-	 * Allocate and return a new process of the correct class. The class name
-	 * is specified by the <tt>nachos.conf</tt> key
-	 * <tt>Kernel.processClassName</tt>.
+	 * Allocate and return a new process of the correct class. The class name is
+	 * specified by the <tt>nachos.conf</tt> key <tt>Kernel.processClassName</tt>.
 	 *
-	 * @return	a new process of the correct class.
+	 * @return a new process of the correct class.
 	 */
 	public static UserProcess newUserProcess() {
-		return (UserProcess)Lib.constructObject(Machine.getProcessClassName());
+		return (UserProcess) Lib.constructObject(Machine.getProcessClassName());
 	}
 
 	/**
-	 * Execute the specified program with the specified arguments. Attempts to
-	 * load the program, and then forks a thread to run it.
+	 * Execute the specified program with the specified arguments. Attempts to load
+	 * the program, and then forks a thread to run it.
 	 *
-	 * @param	name	the name of the file containing the executable.
-	 * @param	args	the arguments to pass to the executable.
-	 * @return	<tt>true</tt> if the program was successfully executed.
+	 * @param name the name of the file containing the executable.
+	 * @param args the arguments to pass to the executable.
+	 * @return <tt>true</tt> if the program was successfully executed.
 	 */
 	public boolean execute(String name, String[] args) {
 		if (!load(name, args))
@@ -86,30 +81,27 @@ public class UserProcess {
 	}
 
 	/**
-	 * Execute the specified program with the specified arguments. Attempts to
-	 * load the program, and then forks a thread to run it.
+	 * Execute the specified program with the specified arguments. Attempts to load
+	 * the program, and then forks a thread to run it.
 	 *
-	 * @param	file	the name of the file containing the executable.
-	 * @param	argc	the number of arguments to pass to the executable.
-	 * @param	argv	the arguments to pass to the executable.
-	 * @return	-1 on error, pID otherwise.
+	 * @param file the name of the file containing the executable.
+	 * @param argc the number of arguments to pass to the executable.
+	 * @param argv the arguments to pass to the executable.
+	 * @return -1 on error, pID otherwise.
 	 */
 
 	public int exec(int address) {
-		/*String[] av = new String[argc];
-		int off = 0;
-		for(String s:av) {
-			byte[] temp = s.getBytes();
-			readVirtualMemory(argv, temp, off, argc);
-			off += s.length()*4;
-			s = temp.toString();
-			
-		}*/
-		//int transferred = readVirtualMemory(argv, av.getBytes(), 0, argc);
+		/*
+		 * String[] av = new String[argc]; int off = 0; for(String s:av) { byte[] temp =
+		 * s.getBytes(); readVirtualMemory(argv, temp, off, argc); off += s.length()*4;
+		 * s = temp.toString();
+		 * 
+		 * }
+		 */
+		// int transferred = readVirtualMemory(argv, av.getBytes(), 0, argc);
 		String file = readVirtualMemoryString(address, 256);
 
-		// cannot open file does not exist. 
-		
+		// cannot open file does not exist.
 
 		String[] arg = new String[argc];
 
@@ -123,12 +115,12 @@ public class UserProcess {
 				arg[i] = readVirtualMemoryString(Lib.bytesToInt(argAddr, 0), 256);
 			}
 		}
-		if(file == null||!file.endsWith(".coff")||!load(file, arg)||argc < 0 || argv > numPages * pageSize) {
+		if (file == null || !file.endsWith(".coff") || !load(file, arg) || argc < 0 || argv > numPages * pageSize) {
 			return -1;
 		}
 
 		UserProcess temp = UserProcess.newUserProcess();
-		
+
 		// fail opening the file;
 		if (!temp.execute(file, arg)) {
 			return -1;
@@ -152,42 +144,39 @@ public class UserProcess {
 //	}
 
 	public int join(int processID, int status) {
-		//Lib.assertTrue(this != UserKernel.currentProcess());
-		
-		//if(this == UserKernel.currentProcess()) {
+		// Lib.assertTrue(this != UserKernel.currentProcess());
+
+		// if(this == UserKernel.currentProcess()) {
 		if (children.containsKey(processID)) {
-		
-			//boolean machineStatus = Machine.interrupt().disable();
+
+			// boolean machineStatus = Machine.interrupt().disable();
 			UserProcess c = children.get(processID);
-			//KThread.sleep();
+			// KThread.sleep();
 			c.thread.join();
-			
-			//Machine.interrupt().restore(machineStatus);
-			
+
+			// Machine.interrupt().restore(machineStatus);
+
 			children.remove(processID);
-			
+
 			int check = writeVirtualMemory(status, Lib.bytesFromInt(c.state));
-			
-			
+
 			if (check == 4) {
 				return 1;
-				
+
 			} else {
-					return 0;
-				}
-			}
-		
-		else {
-			return -1;
+				return 0;
 			}
 		}
+
+		else {
+			return -1;
+		}
+	}
 
 //		if(status == -1) {
 //			return 0;
 //		}
-		
 
-		
 //		while(isChild(processID)) {
 //
 //			boolean machineStatus = Machine.interrupt().disable();
@@ -230,7 +219,7 @@ public class UserProcess {
 	}
 
 	/**
-	 * Terminate the current process immediately. Any open file descriptors 
+	 * Terminate the current process immediately. Any open file descriptors
 	 * belonging to the process are closed. Any children of the process no longer
 	 * have a parent process
 	 * 
@@ -243,45 +232,45 @@ public class UserProcess {
 
 	public void exit(int status) {
 		coff.close();
-		//close any open files
-		for(int i = 15; i > 1; i--) {
-			if(openFile[i] != null) {
-				//handleSyscall(8, i, 0, 0, 0);
+		// close any open files
+		for (int i = 15; i > 1; i--) {
+			if (openFile[i] != null) {
+				// handleSyscall(8, i, 0, 0, 0);
 				openFile[i].close();
 			}
 		}
-		//disown children
+		// disown children
 //		for(UserProcess i: children) {
 //			i.manageParent(this.pID, false);
 //			children.remove(i);
 //		}
-		
-		for (Integer i : children.keySet()) 
+
+		for (Integer i : children.keySet())
 			children.get(i).manageParent(this.pID, false);
-		
+
 		this.state = status;
 		this.unloadSections();
-		
+
 		UserKernel.processList.remove(this);
-		//If process list is empty, end simulation
-		if(UserKernel.processList.isEmpty()) {
+		// If process list is empty, end simulation
+		if (UserKernel.processList.isEmpty()) {
 			Machine.terminate();
 		}
 //		if (this.pID == 0) {
 //			Machine.terminate();
 //		}
-		
+
 		else {
 			KThread.currentThread().finish();
 		}
-		
-		//remove this process from the process list
+
+		// remove this process from the process list
 
 	}
 
 	/**
-	 * Save the state of this process in preparation for a context switch.
-	 * Called by <tt>UThread.saveState()</tt>.
+	 * Save the state of this process in preparation for a context switch. Called by
+	 * <tt>UThread.saveState()</tt>.
 	 */
 	public void saveState() {
 	}
@@ -295,95 +284,90 @@ public class UserProcess {
 	}
 
 	/**
-	 * Read a null-terminated string from this process's virtual memory. Read
-	 * at most <tt>maxLength + 1</tt> bytes from the specified address, search
-	 * for the null terminator, and convert it to a <tt>java.lang.String</tt>,
-	 * without including the null terminator. If no null terminator is found,
-	 * returns <tt>null</tt>.
+	 * Read a null-terminated string from this process's virtual memory. Read at
+	 * most <tt>maxLength + 1</tt> bytes from the specified address, search for the
+	 * null terminator, and convert it to a <tt>java.lang.String</tt>, without
+	 * including the null terminator. If no null terminator is found, returns
+	 * <tt>null</tt>.
 	 *
-	 * @param	vaddr	the starting virtual address of the null-terminated
-	 *			string.
-	 * @param	maxLength	the maximum number of characters in the string,
-	 *				not including the null terminator.
-	 * @return	the string read, or <tt>null</tt> if no null terminator was
-	 *		found.
+	 * @param vaddr     the starting virtual address of the null-terminated string.
+	 * @param maxLength the maximum number of characters in the string, not
+	 *                  including the null terminator.
+	 * @return the string read, or <tt>null</tt> if no null terminator was found.
 	 */
 	public String MemoryString(int vaddr, int maxLength) {
 		Lib.assertTrue(maxLength >= 0);
 
-		byte[] bytes = new byte[maxLength+1];
+		byte[] bytes = new byte[maxLength + 1];
 
 		int bytesRead = readVirtualMemory(vaddr, bytes);
 
-		for (int length=0; length<bytesRead; length++) {
+		for (int length = 0; length < bytesRead; length++) {
 			if (bytes[length] == 0)
 				return new String(bytes, 0, length);
 		}
 
 		return null;
 	}
-	
+
 // 	protected TranslationEntry pageSearch(int vpn) {
 // 		if (pageTable == null) {
 // 			return null;
 // 		}
-		
+
 // 		if (vpn < pageTable.length && vpn >= 0) {
 // 			return pageTable[vpn];
 // 		}
-		
+
 // 		else {
 // 			return null;
 // 		}
-		
+
 // 	}
-	
+
 	public String readVirtualMemoryString(int vaddr, int maxLength) {
 		Lib.assertTrue(maxLength >= 0);
 
-		byte[] bytes = new byte[maxLength+1];
+		byte[] bytes = new byte[maxLength + 1];
 
 		int bytesRead = readVirtualMemory(vaddr, bytes);
 
-		for (int length=0; length<bytesRead; length++) {
+		for (int length = 0; length < bytesRead; length++) {
 			if (bytes[length] == 0)
 				return new String(bytes, 0, length);
 		}
 
 		return null;
 	}
-
 
 	/**
 	 * Transfer data from this process's virtual memory to all of the specified
 	 * array. Same as <tt>readVirtualMemory(vaddr, data, 0, data.length)</tt>.
 	 *
-	 * @param	vaddr	the first byte of virtual memory to read.
-	 * @param	data	the array where the data will be stored.
-	 * @return	the number of bytes successfully transferred.
+	 * @param vaddr the first byte of virtual memory to read.
+	 * @param data  the array where the data will be stored.
+	 * @return the number of bytes successfully transferred.
 	 */
 	public int readVirtualMemory(int vaddr, byte[] data) {
 		return readVirtualMemory(vaddr, data, 0, data.length);
 	}
 
 	/**
-	 * Transfer data from this process's virtual memory to the specified array.
-	 * This method handles address translation details. This method must
-	 * <i>not</i> destroy the current process if an error occurs, but instead
-	 * should return the number of bytes successfully copied (or zero if no
-	 * data could be copied).
+	 * Transfer data from this process's virtual memory to the specified array. This
+	 * method handles address translation details. This method must <i>not</i>
+	 * destroy the current process if an error occurs, but instead should return the
+	 * number of bytes successfully copied (or zero if no data could be copied).
 	 *
-	 * @param	vaddr	the first byte of virtual memory to read.
-	 * @param	data	the array where the data will be stored.
-	 * @param	offset	the first byte to write in the array.
-	 * @param	length	the number of bytes to transfer from virtual memory to
-	 *			the array.
-	 * @return	the number of bytes successfully transferred.
+	 * @param vaddr  the first byte of virtual memory to read.
+	 * @param data   the array where the data will be stored.
+	 * @param offset the first byte to write in the array.
+	 * @param length the number of bytes to transfer from virtual memory to the
+	 *               array.
+	 * @return the number of bytes successfully transferred.
 	 */
-	public int readVirtualMemory(int vaddr, byte[] data, int offset,
-			int length) {
+	public int readVirtualMemory(int vaddr, byte[] data, int offset, int length) {
 //		
-		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
+		Lib.assertTrue(offset >= 0 && length >= 0 && offset + length <= data.length);
 
 		byte[] memory = Machine.processor().getMemory();
 //	
@@ -395,47 +379,45 @@ public class UserProcess {
 //		System.arraycopy(memory, vaddr, data, offset, amount);
 //
 //		return amount;
-		
+
 		int bytes = 0;
 		int n = 1024;
-		
+
 		while (offset < data.length && length > 0) {
 			int virPage = vaddr / n;
 			int addressOffset = vaddr % n;
-			
+
 			if (virPage < 0 || virPage >= pageTable.length) {
 				break;
 			}
-			
+
 			TranslationEntry tran = pageTable[virPage];
-			
-			if (!tran.valid) 
+
+			if (!tran.valid)
 				break;
-			
+
 			tran.used = true;
-			
+
 			int phyPage = tran.ppn;
 			int phyAddr = (phyPage * n) + addressOffset;
-			
+
 			// remaining amount smallest from remaining;
 			int amount = Math.min(data.length - offset, Math.min(length, n - addressOffset));
-			
+
 			System.arraycopy(memory, phyAddr, data, offset, amount);
-			
+
 			vaddr = vaddr + amount;
 			offset = offset + amount;
 			length -= amount;
-			
+
 			bytes = bytes + amount;
-			
+
 		}
-		
+
 		return bytes;
-		
-		
-		
+
 //		
-				
+
 // 		Lib.assertTrue(offset >= 0 && length >= 0
 // 				&& offset + length <= data.length);
 
@@ -446,7 +428,6 @@ public class UserProcess {
 // 			Lib.debug(dbgProcess, "readVirtualMemory:Invalid virtual Address");
 // 			return 0;
 // 		}
-
 
 // 		int transferredCounter=0;
 // 		int endVAddr=vaddr+length-1;
@@ -480,61 +461,58 @@ public class UserProcess {
 
 // 		}
 
-
-
 // 		return transferredCounter;
-		
-		
+
 // 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
 // 		byte[] memory = Machine.processor().getMemory();
-		
+
 // 		// for now, just assume that virtual addresses equal physical addresses
 // 				if (vaddr < 0 || vaddr >= memory.length) {
 // 					return 0; 
 // 				}
-				
+
 // 				int bytes = 0;
-				
+
 // 				int end = vaddr + length - 1;
-				
+
 // 				int startVirtual = Machine.processor().pageFromAddress(vaddr);
 // 				int endVirtual = Machine.processor().pageFromAddress(end);
-				
+
 // 				for (int i = startVirtual; i <= endVirtual; i++) {
 // 					if (!pageSearch(i).valid) {
 // 						break;
 // 					}
-					
+
 // 					int startVirtualAddr = Machine.processor().makeAddress(i, 0);
 // 					int endVirtualAddr = Machine.processor().makeAddress(i, pageSize - 1);
-					
+
 // 					int addrOffset;
 // 					int amount = 0;
-					
+
 // 					if (end < endVirtualAddr && vaddr > startVirtualAddr) {
 // 						addrOffset = vaddr - startVirtualAddr;
 // 						amount = length;
 // 					} 
-					
+
 // 					else if (endVirtual < endVirtualAddr && vaddr <= startVirtualAddr) {
 // 						addrOffset = 0;
 // 					    amount = endVirtual - endVirtualAddr + 1;
 // 					    }
-					
+
 // 					else {
 // 						addrOffset = 0;
 // 						amount = pageSize;
 // 					}
-					
+
 // 					int phyAddr = Machine.processor().makeAddress(pageSearch(i).ppn, addrOffset);
 // 					System.arraycopy(memory, phyAddr, data, offset + bytes, amount);
 // 					bytes += amount;
-					
+
 // 				}
 
 // 				return bytes;
-				
+
 //
 //		if (length > (pageSize * numPages - vaddr)) {
 //			length = pageSize * numPages - vaddr;
@@ -579,90 +557,79 @@ public class UserProcess {
 //
 //		return bytes;
 
-
 	}
 
-
 	/**
-	 * Transfer all data from the specified array to this process's virtual
-	 * memory.
+	 * Transfer all data from the specified array to this process's virtual memory.
 	 * Same as <tt>writeVirtualMemory(vaddr, data, 0, data.length)</tt>.
 	 *
-	 * @param	vaddr	the first byte of virtual memory to write.
-	 * @param	data	the array containing the data to transfer.
-	 * @return	the number of bytes successfully transferred.
+	 * @param vaddr the first byte of virtual memory to write.
+	 * @param data  the array containing the data to transfer.
+	 * @return the number of bytes successfully transferred.
 	 */
 	public int writeVirtualMemory(int vaddr, byte[] data) {
 		return writeVirtualMemory(vaddr, data, 0, data.length);
 	}
 
 	/**
-	 * Transfer data from the specified array to this process's virtual memory.
-	 * This method handles address translation details. This method must
-	 * <i>not</i> destroy the current process if an error occurs, but instead
-	 * should return the number of bytes successfully copied (or zero if no
-	 * data could be copied).
+	 * Transfer data from the specified array to this process's virtual memory. This
+	 * method handles address translation details. This method must <i>not</i>
+	 * destroy the current process if an error occurs, but instead should return the
+	 * number of bytes successfully copied (or zero if no data could be copied).
 	 *
-	 * @param	vaddr	the first byte of virtual memory to write.
-	 * @param	data	the array containing the data to transfer.
-	 * @param	offset	the first byte to transfer from the array.
-	 * @param	length	the number of bytes to transfer from the array to
-	 *			virtual memory.
-	 * @return	the number of bytes successfully transferred.
+	 * @param vaddr  the first byte of virtual memory to write.
+	 * @param data   the array containing the data to transfer.
+	 * @param offset the first byte to transfer from the array.
+	 * @param length the number of bytes to transfer from the array to virtual
+	 *               memory.
+	 * @return the number of bytes successfully transferred.
 	 */
-	public int writeVirtualMemory(int vaddr, byte[] data, int offset,
-			int length) {
-		
-		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
+	public int writeVirtualMemory(int vaddr, byte[] data, int offset, int length) {
+
+		Lib.assertTrue(offset >= 0 && length >= 0 && offset + length <= data.length);
 
 		byte[] memory = Machine.processor().getMemory();
-		
+
 		int bytes = 0;
 		int n = 1024;
-		
+
 		while (offset < data.length && length > 0) {
 			int virPage = vaddr / n;
 			int addressOffset = vaddr % n;
-			
+
 			if (virPage < 0 || virPage >= pageTable.length) {
 				break;
 			}
-			
+
 			TranslationEntry tran = pageTable[virPage];
-			
+
 //			if (!tran.valid) 
 //				break;
-			
+
 			// insetad check if it's read only;
-			if (!tran.valid || tran.readOnly) 
+			if (!tran.valid || tran.readOnly)
 				break;
-			
-			
+
 			tran.used = true;
 			tran.dirty = true;
-			
+
 			int phyPage = tran.ppn;
 			int phyAddr = (phyPage * n) + addressOffset;
-			
+
 			// remaining amount smallest from remaining;
 			int amount = Math.min(data.length - offset, Math.min(length, n - addressOffset));
-			
+
 			System.arraycopy(data, offset, memory, phyAddr, amount);
-			
+
 			vaddr = vaddr + amount;
 			offset = offset + amount;
 			length -= amount;
-			
+
 			bytes = bytes + amount;
-			
+
 		}
-		
+
 		return bytes;
-		
-		
-	
-
-
 
 // 		return transferredCounter;
 // 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
@@ -676,11 +643,11 @@ public class UserProcess {
 // 		if (length > (pageSize * numPages - vaddr)) {
 // 			length = (pageSize * numPages) - vaddr;
 // 		}
-		
+
 // 		if ((data.length - offset) < length) {
 // 			length = data.length - offset;
 // 		}
-		
+
 // 		int bytes = 0;
 
 // 		do {
@@ -717,16 +684,15 @@ public class UserProcess {
 	}
 
 	public boolean manageParent(int parID, boolean add) {
-		if(add) {
-			if(this.parentID != -1) {
+		if (add) {
+			if (this.parentID != -1) {
 				return false;
-			}
-			else {
+			} else {
 				this.parentID = parID;
 				return true;
 			}
 		}
-		if(this.parentID == -1) {
+		if (this.parentID == -1) {
 			return false;
 		}
 		this.parentID = -1;
@@ -734,14 +700,14 @@ public class UserProcess {
 	}
 
 	/**
-	 * Load the executable with the specified name into this process, and
-	 * prepare to pass it the specified arguments. Opens the executable, reads
-	 * its header information, and copies sections and arguments into this
-	 * process's virtual memory.
+	 * Load the executable with the specified name into this process, and prepare to
+	 * pass it the specified arguments. Opens the executable, reads its header
+	 * information, and copies sections and arguments into this process's virtual
+	 * memory.
 	 *
-	 * @param	name	the name of the file containing the executable.
-	 * @param	args	the arguments to pass to the executable.
-	 * @return	<tt>true</tt> if the executable was successfully loaded.
+	 * @param name the name of the file containing the executable.
+	 * @param args the arguments to pass to the executable.
+	 * @return <tt>true</tt> if the executable was successfully loaded.
 	 */
 	private boolean load(String name, String[] args) {
 		Lib.debug(dbgProcess, "UserProcess.load(\"" + name + "\")");
@@ -754,8 +720,7 @@ public class UserProcess {
 
 		try {
 			coff = new Coff(executable);
-		}
-		catch (EOFException e) {
+		} catch (EOFException e) {
 			executable.close();
 			Lib.debug(dbgProcess, "\tcoff load failed");
 			return false;
@@ -763,7 +728,7 @@ public class UserProcess {
 
 		// make sure the sections are contiguous and start at page 0
 		numPages = 0;
-		for (int s=0; s<coff.getNumSections(); s++) {
+		for (int s = 0; s < coff.getNumSections(); s++) {
 			CoffSection section = coff.getSection(s);
 			if (section.getFirstVPN() != numPages) {
 				coff.close();
@@ -776,7 +741,7 @@ public class UserProcess {
 		// make sure the argv array will fit in one page
 		byte[][] argv = new byte[args.length][];
 		int argsSize = 0;
-		for (int i=0; i<args.length; i++) {
+		for (int i = 0; i < args.length; i++) {
 			argv[i] = args[i].getBytes();
 			// 4 bytes for argv[] pointer; then string plus one for null byte
 			argsSize += 4 + argv[i].length + 1;
@@ -788,11 +753,11 @@ public class UserProcess {
 		}
 
 		// program counter initially points at the program entry point
-		initialPC = coff.getEntryPoint();	
+		initialPC = coff.getEntryPoint();
 
 		// next comes the stack; stack pointer initially points to top of it
 		numPages += stackPages;
-		initialSP = numPages*pageSize;
+		initialSP = numPages * pageSize;
 
 		// and finally reserve 1 page for arguments
 		numPages++;
@@ -801,20 +766,19 @@ public class UserProcess {
 			return false;
 
 		// store arguments in last page
-		int entryOffset = (numPages-1)*pageSize;
-		int stringOffset = entryOffset + args.length*4;
+		int entryOffset = (numPages - 1) * pageSize;
+		int stringOffset = entryOffset + args.length * 4;
 
 		this.argc = args.length;
 		this.argv = entryOffset;
 
-		for (int i=0; i<argv.length; i++) {
+		for (int i = 0; i < argv.length; i++) {
 			byte[] stringOffsetBytes = Lib.bytesFromInt(stringOffset);
-			Lib.assertTrue(writeVirtualMemory(entryOffset,stringOffsetBytes) == 4);
+			Lib.assertTrue(writeVirtualMemory(entryOffset, stringOffsetBytes) == 4);
 			entryOffset += 4;
-			Lib.assertTrue(writeVirtualMemory(stringOffset, argv[i]) ==
-					argv[i].length);
+			Lib.assertTrue(writeVirtualMemory(stringOffset, argv[i]) == argv[i].length);
 			stringOffset += argv[i].length;
-			Lib.assertTrue(writeVirtualMemory(stringOffset,new byte[] { 0 }) == 1);
+			Lib.assertTrue(writeVirtualMemory(stringOffset, new byte[] { 0 }) == 1);
 			stringOffset += 1;
 		}
 
@@ -822,96 +786,102 @@ public class UserProcess {
 	}
 
 	/**
-	 * Allocates memory for this process, and loads the COFF sections into
-	 * memory. If this returns successfully, the process will definitely be
-	 * run (this is the last step in process initialization that can fail).
+	 * Allocates memory for this process, and loads the COFF sections into memory.
+	 * If this returns successfully, the process will definitely be run (this is the
+	 * last step in process initialization that can fail).
 	 *
-	 * @return	<tt>true</tt> if the sections were successfully loaded.
+	 * @return <tt>true</tt> if the sections were successfully loaded.
 	 */
 	protected boolean loadSections() {
 		if (numPages > Machine.processor().getNumPhysPages()) {
-	    coff.close();
-	    Lib.debug(dbgProcess, "\tinsufficient physical memory");
-	    return false;
-	}
+			coff.close();
+			Lib.debug(dbgProcess, "\tinsufficient physical memory");
+			return false;
+		}
+		else if(numPages == 0) {
+			coff.close();
+			Lib.debug(dbgProcess, "\tinvalid page number");
+			return false;
+		}
 
 		pageTable = new TranslationEntry[numPages];
-		
+
 		for (int i = 0; i < numPages; i++) {
 			int physicalPage = UserKernel.addPage();
-			
+
 			if (physicalPage < 0) {
 				for (int j = 0; j < i; j++) {
-					
-					if(pageTable[j].valid == true) {
+
+					if (pageTable[j].valid == true) {
 						UserKernel.removePage(pageTable[j].ppn);
 						pageTable[j].valid = false;
 					}
-					
+
 				}
-				
+
 				coff.close();
 				return false;
-			
+
 			}
-				
-			pageTable[i] = new TranslationEntry (i, physicalPage, true, false, false, false);
-				
+
+			pageTable[i] = new TranslationEntry(i, physicalPage, true, false, false, false);
+
 		}
-		
- 		// load sections
- 		for (int s=0; s<coff.getNumSections(); s++) {
- 			CoffSection section = coff.getSection(s);
 
- 			Lib.debug(dbgProcess, "\tinitializing " + section.getName()
- 			+ " section (" + section.getLength() + " pages)");
+		// load sections
+		for (int s = 0; s < coff.getNumSections(); s++) {
+			CoffSection section = coff.getSection(s);
 
- 			for (int i=0; i<section.getLength(); i++) {
- 				int vpn = section.getFirstVPN()+i;
+			Lib.debug(dbgProcess,
+					"\tinitializing " + section.getName() + " section (" + section.getLength() + " pages)");
 
- 				// for now, just assume virtual addresses=physical addresses
- 				section.loadPage(i, pageTable[vpn].ppn);
- 				/* TranslationEntry entry = pageTable[vpn];
- 				entry.readOnly = section.isReadOnly();
- 				int ppn = entry.ppn; */
- 				
- 				if(section.isReadOnly() == true) {
- 					pageTable[vpn].readOnly = true;}
- 				}
- 		}
-		
- 		coff.close();
+			for (int i = 0; i < section.getLength(); i++) {
+				int vpn = section.getFirstVPN() + i;
+
+				// for now, just assume virtual addresses=physical addresses
+				section.loadPage(i, pageTable[vpn].ppn);
+				/*
+				 * TranslationEntry entry = pageTable[vpn]; entry.readOnly =
+				 * section.isReadOnly(); int ppn = entry.ppn;
+				 */
+
+				if (section.isReadOnly() == true) {
+					pageTable[vpn].readOnly = true;
+				}
+			}
+		}
+
+		coff.close();
 		return true;
-		
-		
+
 		// modified
 		// disable system interrupts
-		
+
 		// boolean status = Machine.interrupt().disable();
-		
-		//UserKernel.memoryLock.acquire(); // acquire lock
-		// checks		
-		
+
+		// UserKernel.memoryLock.acquire(); // acquire lock
+		// checks
+
 // 		if (numPages > Machine.processor().getNumPhysPages()) {
 // 			coff.close();
 // 			Lib.debug(dbgProcess, "\tinsufficient physical memory");
-			
+
 // 			// release lock
 // 			//UserKernel.memoryLock.release();
 // 			Machine.interrupt().restore(status);
-			
+
 // 			return false;
 // 		}
-		
+
 // 		// page table;
 // 		pageTable = new TranslationEntry[numPages];
-		
+
 // 		for (int i = 0; i < numPages; i++) {
 // 			// take out from the free list by removing;
 // 			int pageNext = UserKernel.memoryList.remove();
 // 			pageTable[i] = new TranslationEntry(i, pageNext, true, false, false, false);	
 // 		}
-		
+
 // 		// release lock
 // 		//UserKernel.memoryLock.release();
 // 		Machine.interrupt().restore(status);
@@ -933,18 +903,17 @@ public class UserProcess {
 // 				int ppn = entry.ppn;
 
 // 				section.loadPage(i, ppn); */
-				
+
 // 				// label it as read only;
 // 				pageTable[vpn].readOnly = section.isReadOnly();
 // 				// add to physical page table;
 // 				section.loadPage(i, pageTable[vpn].ppn);
-				
-				
+
 // 			}
 // 		}
 
 // 		return true;
-		
+
 //		if (numPages > Machine.processor().getNumPhysPages()) {
 //		    coff.close();
 //		    Lib.debug(dbgProcess, "\tinsufficient physical memory");
@@ -966,8 +935,7 @@ public class UserProcess {
 //		    }
 //		}
 //		return true;
-		
-		
+
 //	if (numPages > Machine.processor().getNumPhysPages()) {
 //	    coff.close();
 //	    Lib.debug(dbgProcess, "\tinsufficient physical memory");
@@ -990,39 +958,38 @@ public class UserProcess {
 //	}
 //	
 //	return true;
-		
-		
+
 	}
 
 	/**
 	 * Release any resources allocated by <tt>loadSections()</tt>.
 	 */
 	protected void unloadSections() {
-		
+
 		for (int i = 0; i < numPages; i++) {
-			
+
 			if (pageTable[i] != null) {
 				pageTable[i].valid = false;
 				UserKernel.removePage(pageTable[i].ppn);
 			}
-			
+
 		}
-		
+
 		pageTable = null;
 	}
 
 	/**
-	 * Initialize the processor's registers in preparation for running the
-	 * program loaded into this process. Set the PC register to point at the
-	 * start function, set the stack pointer register to point at the top of
-	 * the stack, set the A0 and A1 registers to argc and argv, respectively,
-	 * and initialize all other registers to 0.
+	 * Initialize the processor's registers in preparation for running the program
+	 * loaded into this process. Set the PC register to point at the start function,
+	 * set the stack pointer register to point at the top of the stack, set the A0
+	 * and A1 registers to argc and argv, respectively, and initialize all other
+	 * registers to 0.
 	 */
 	public void initRegisters() {
 		Processor processor = Machine.processor();
 
 		// by default, everything's 0
-		for (int i=0; i<processor.numUserRegisters; i++)
+		for (int i = 0; i < processor.numUserRegisters; i++)
 			processor.writeRegister(i, 0);
 
 		// initialize PC and SP according
@@ -1035,7 +1002,7 @@ public class UserProcess {
 	}
 
 	/**
-	 * Handle the halt() system call. 
+	 * Handle the halt() system call.
 	 */
 	private int handleHalt() {
 
@@ -1045,19 +1012,17 @@ public class UserProcess {
 		return 0;
 	}
 
-
 	private int searchSpace() {
 		int fileDescriptor = -1;
 
 		// support 16 files max;
-		for (int i = 0; i < 16; i++) 
-		{
-			if(openFile[i] == null) {
+		for (int i = 0; i < 16; i++) {
+			if (openFile[i] == null) {
 				fileDescriptor = i;
 				return fileDescriptor;
 			}
 		}
-		return -1;		
+		return -1;
 	}
 
 	private int handleCreat(int address) {
@@ -1071,23 +1036,23 @@ public class UserProcess {
 		String file = readVirtualMemoryString(address, 256);
 
 		// if file does not exist, create failed;
-		if (file == null) 
-		{
+		if (file == null) {
 			return -1;
 		}
 
-		// Search for empty space; 
+		// Search for empty space;
 		int fileDescriptor = searchSpace();
 
-		/* if searchSpace returns -1, meaning it reached
-		   16 max opening file. */
+		/*
+		 * if searchSpace returns -1, meaning it reached 16 max opening file.
+		 */
 		if (fileDescriptor == -1) {
 			return -1;
 		}
 
 		// create;
-		else {	
-			OpenFile f =ThreadedKernel.fileSystem.open(file, true);
+		else {
+			OpenFile f = ThreadedKernel.fileSystem.open(file, true);
 
 			if (f == null) {
 				return -1;
@@ -1098,14 +1063,13 @@ public class UserProcess {
 				return fileDescriptor;
 			}
 
-			// openFile [fileDescriptor] = ThreadedKernel.fileSystem.open(file, true);	
+			// openFile [fileDescriptor] = ThreadedKernel.fileSystem.open(file, true);
 		}
 
 		// return fileDescriptor;
 		// return fileDescriptor;
 
 	}
-
 
 	private int handleOpen(int address) {
 
@@ -1116,7 +1080,7 @@ public class UserProcess {
 
 		String file = readVirtualMemoryString(address, 256);
 
-		// cannot open file does not exist. 
+		// cannot open file does not exist.
 		if (file == null) {
 			return -1;
 		}
@@ -1124,28 +1088,30 @@ public class UserProcess {
 		// search for empty space;
 		int fileDescriptor = searchSpace();
 
-		/* if searchSpace returns -1, meaning it reached
-		   16 max opening file. */
+		/*
+		 * if searchSpace returns -1, meaning it reached 16 max opening file.
+		 */
 		if (fileDescriptor == -1) {
-			return -1; 
+			return -1;
 		}
 
 		else {
-			// the value of create should be false since we are only handling open right here;
+			// the value of create should be false since we are only handling open right
+			// here;
 
 			OpenFile f = ThreadedKernel.fileSystem.open(file, false);
 
-			if(f == null) {
+			if (f == null) {
 				return -1;
 			}
 
 			else {
 
-				//openFile[fileDescriptor] = ThreadedKernel.fileSystem.open(file, false);
+				// openFile[fileDescriptor] = ThreadedKernel.fileSystem.open(file, false);
 				openFile[fileDescriptor] = f;
 				return fileDescriptor;
 			}
-		}		
+		}
 	}
 
 	private int handleRead(int fileDescriptor, int addr, int l) {
@@ -1153,7 +1119,7 @@ public class UserProcess {
 			return -1;
 		}
 
-		else if(openFile[fileDescriptor] == null) {
+		else if (openFile[fileDescriptor] == null) {
 			return -1;
 		}
 
@@ -1162,13 +1128,13 @@ public class UserProcess {
 		int readNum = openFile[fileDescriptor].read(buffer, 0, l);
 
 		// couldn't read data;
-		if(readNum <= 0) {
+		if (readNum <= 0) {
 			return 0;
 		}
 
 		int writeNum = writeVirtualMemory(addr, buffer);
 		return writeNum;
-	}	
+	}
 
 	private int handleWrite(int fileDescriptor, int addr, int l) {
 		// write data from virtual memory address into the file;
@@ -1178,7 +1144,7 @@ public class UserProcess {
 			return -1;
 		}
 
-		else if(openFile[fileDescriptor] == null) {
+		else if (openFile[fileDescriptor] == null) {
 			return -1;
 		}
 
@@ -1200,11 +1166,9 @@ public class UserProcess {
 			return -1;
 		}
 
-		// return written; 
+		// return written;
 		return writeNum;
 	}
-
-
 
 	private int handleClose(int fileDescriptor) {
 
@@ -1230,7 +1194,6 @@ public class UserProcess {
 		return 0;
 	}
 
-
 	private int handleUnlink(int address) {
 		// use for removing file;
 
@@ -1248,7 +1211,7 @@ public class UserProcess {
 		}
 
 		if (ThreadedKernel.fileSystem.remove(file)) {
-			return 0;	// deleted successfully;
+			return 0; // deleted successfully;
 		}
 
 		else {
@@ -1257,46 +1220,69 @@ public class UserProcess {
 
 	}
 
-
-	private static final int
-	syscallHalt = 0,
-	syscallExit = 1,
-	syscallExec = 2,
-	syscallJoin = 3,
-	syscallCreate = 4,
-	syscallOpen = 5,
-	syscallRead = 6,
-	syscallWrite = 7,
-	syscallClose = 8,
-	syscallUnlink = 9;
+	private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2, syscallJoin = 3, syscallCreate = 4,
+			syscallOpen = 5, syscallRead = 6, syscallWrite = 7, syscallClose = 8, syscallUnlink = 9;
 
 	/**
 	 * Handle a syscall exception. Called by <tt>handleException()</tt>. The
 	 * <i>syscall</i> argument identifies which syscall the user executed:
 	 *
 	 * <table>
-	 * <tr><td>syscall#</td><td>syscall prototype</td></tr>
-	 * <tr><td>0</td><td><tt>void halt();</tt></td></tr>
-	 * <tr><td>1</td><td><tt>void exit(int status);</tt></td></tr>
-	 * <tr><td>2</td><td><tt>int  exec(char *name, int argc, char **argv);
-	 * 								</tt></td></tr>
-	 * <tr><td>3</td><td><tt>int  join(int pid, int *status);</tt></td></tr>
-	 * <tr><td>4</td><td><tt>int  creat(char *name);</tt></td></tr>
-	 * <tr><td>5</td><td><tt>int  open(char *name);</tt></td></tr>
-	 * <tr><td>6</td><td><tt>int  read(int fd, char *buffer, int size);
-	 *								</tt></td></tr>
-	 * <tr><td>7</td><td><tt>int  write(int fd, char *buffer, int size);
-	 *								</tt></td></tr>
-	 * <tr><td>8</td><td><tt>int  close(int fd);</tt></td></tr>
-	 * <tr><td>9</td><td><tt>int  unlink(char *name);</tt></td></tr>
+	 * <tr>
+	 * <td>syscall#</td>
+	 * <td>syscall prototype</td>
+	 * </tr>
+	 * <tr>
+	 * <td>0</td>
+	 * <td><tt>void halt();</tt></td>
+	 * </tr>
+	 * <tr>
+	 * <td>1</td>
+	 * <td><tt>void exit(int status);</tt></td>
+	 * </tr>
+	 * <tr>
+	 * <td>2</td>
+	 * <td><tt>int  exec(char *name, int argc, char **argv);
+	 * 								</tt></td>
+	 * </tr>
+	 * <tr>
+	 * <td>3</td>
+	 * <td><tt>int  join(int pid, int *status);</tt></td>
+	 * </tr>
+	 * <tr>
+	 * <td>4</td>
+	 * <td><tt>int  creat(char *name);</tt></td>
+	 * </tr>
+	 * <tr>
+	 * <td>5</td>
+	 * <td><tt>int  open(char *name);</tt></td>
+	 * </tr>
+	 * <tr>
+	 * <td>6</td>
+	 * <td><tt>int  read(int fd, char *buffer, int size);
+	 *								</tt></td>
+	 * </tr>
+	 * <tr>
+	 * <td>7</td>
+	 * <td><tt>int  write(int fd, char *buffer, int size);
+	 *								</tt></td>
+	 * </tr>
+	 * <tr>
+	 * <td>8</td>
+	 * <td><tt>int  close(int fd);</tt></td>
+	 * </tr>
+	 * <tr>
+	 * <td>9</td>
+	 * <td><tt>int  unlink(char *name);</tt></td>
+	 * </tr>
 	 * </table>
 	 * 
-	 * @param	syscall	the syscall number.
-	 * @param	a0	the first syscall argument.
-	 * @param	a1	the second syscall argument.
-	 * @param	a2	the third syscall argument.
-	 * @param	a3	the fourth syscall argument.
-	 * @return	the value to be returned to the user.
+	 * @param syscall the syscall number.
+	 * @param a0      the first syscall argument.
+	 * @param a1      the second syscall argument.
+	 * @param a2      the third syscall argument.
+	 * @param a3      the fourth syscall argument.
+	 * @return the value to be returned to the user.
 	 */
 	public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
 		switch (syscall) {
@@ -1337,42 +1323,35 @@ public class UserProcess {
 	}
 
 	/**
-	 * Handle a user exception. Called by
-	 * <tt>UserKernel.exceptionHandler()</tt>. The
-	 * <i>cause</i> argument identifies which exception occurred; see the
+	 * Handle a user exception. Called by <tt>UserKernel.exceptionHandler()</tt>.
+	 * The <i>cause</i> argument identifies which exception occurred; see the
 	 * <tt>Processor.exceptionZZZ</tt> constants.
 	 *
-	 * @param	cause	the user exception that occurred.
+	 * @param cause the user exception that occurred.
 	 */
 	public void handleException(int cause) {
 		Processor processor = Machine.processor();
 
 		switch (cause) {
 		case Processor.exceptionSyscall:
-			int result = handleSyscall(processor.readRegister(Processor.regV0),
-					processor.readRegister(Processor.regA0),
-					processor.readRegister(Processor.regA1),
-					processor.readRegister(Processor.regA2),
-					processor.readRegister(Processor.regA3)
-					);
+			int result = handleSyscall(processor.readRegister(Processor.regV0), processor.readRegister(Processor.regA0),
+					processor.readRegister(Processor.regA1), processor.readRegister(Processor.regA2),
+					processor.readRegister(Processor.regA3));
 			processor.writeRegister(Processor.regV0, result);
 			processor.advancePC();
-			break;				       
+			break;
 
 		default:
-			Lib.debug(dbgProcess, "Unexpected exception: " +
-					Processor.exceptionNames[cause]);
-			Lib.assertNotReached("Unexpected exception "+
-					Processor.exceptionNames[cause]);
+			Lib.debug(dbgProcess, "Unexpected exception: " + Processor.exceptionNames[cause]);
+			Lib.assertNotReached("Unexpected exception " + Processor.exceptionNames[cause]);
 		}
 	}
 
-	//list of threads associated with this process
+	// list of threads associated with this process
 	private UThread thread;
-	//private LinkedList<UThread> threads;
+	// private LinkedList<UThread> threads;
 
-	protected OpenFile[] openFile; 
-
+	protected OpenFile[] openFile;
 
 	/** The program being run by this process. */
 	protected Coff coff;
@@ -1385,21 +1364,19 @@ public class UserProcess {
 	/** The number of pages in the program's stack. */
 	protected final int stackPages = 8;
 
-	//list of children
+	// list of children
 	// protected LinkedList <UserProcess> children;
-		protected Hashtable <Integer, UserProcess> children;
-	
+	protected Hashtable<Integer, UserProcess> children;
+
 	private int initialPC, initialSP;
 	private int argc, argv;
-	
 
 	private int state;
-	
-	//ID of this process
+
+	// ID of this process
 	private int pID;
 
-
-	//ID of the parent of this process, -1 means no parent
+	// ID of the parent of this process, -1 means no parent
 	private int parentID = -1;
 
 	private static final int pageSize = Processor.pageSize;
