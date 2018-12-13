@@ -295,7 +295,7 @@ public class UserProcess {
 	 *                  including the null terminator.
 	 * @return the string read, or <tt>null</tt> if no null terminator was found.
 	 */
-	public String MemoryString(int vaddr, int maxLength) {
+	/*public String MemoryString(int vaddr, int maxLength) {
 		Lib.assertTrue(maxLength >= 0);
 
 		byte[] bytes = new byte[maxLength + 1];
@@ -309,7 +309,7 @@ public class UserProcess {
 
 		return null;
 	}
-
+	*/
 // 	protected TranslationEntry pageSearch(int vpn) {
 // 		if (pageTable == null) {
 // 			return null;
@@ -384,8 +384,8 @@ public class UserProcess {
 		int n = 1024;
 
 		while (offset < data.length && length > 0) {
-			int virPage = vaddr / n;
-			int addressOffset = vaddr % n;
+			int virPage = (vaddr + bytes) / n;
+			int addressOffset = (vaddr + bytes)% n;
 
 			if (virPage < 0 || virPage >= pageTable.length) {
 				break;
@@ -594,8 +594,8 @@ public class UserProcess {
 		int n = 1024;
 
 		while (offset < data.length && length > 0) {
-			int virPage = vaddr / n;
-			int addressOffset = vaddr % n;
+			int virPage = (vaddr + bytes) / n;
+			int addressOffset = (vaddr + bytes) % n;
 
 			if (virPage < 0 || virPage >= pageTable.length) {
 				break;
@@ -629,7 +629,7 @@ public class UserProcess {
 
 		}
 
-		return bytes;
+		return length;
 
 // 		return transferredCounter;
 // 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
@@ -1005,8 +1005,13 @@ public class UserProcess {
 	 * Handle the halt() system call.
 	 */
 	private int handleHalt() {
-
-		Machine.halt();
+		if (processID == 0) {
+           	 Machine.halt();
+        	} 
+		else {
+          	  return -1;
+     		}
+		
 
 		Lib.assertNotReached("Machine.halt() did not halt machine!");
 		return 0;
