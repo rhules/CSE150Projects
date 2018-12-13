@@ -1005,12 +1005,12 @@ public class UserProcess {
 	 * Handle the halt() system call.
 	 */
 	private int handleHalt() {
-		if (processID == 0) {
+		//if (processID == 0) {
            	 Machine.halt();
-        	} 
+        /*	} 
 		else {
           	  return -1;
-     		}
+     		}*/
 		
 
 		Lib.assertNotReached("Machine.halt() did not halt machine!");
