@@ -30,21 +30,30 @@ public class UserProcess {
 	 */
 	public UserProcess() {
 		int numPhysPages = Machine.processor().getNumPhysPages();
+		
 		pageTable = new TranslationEntry[numPhysPages];
 		pID = UserKernel.gPID++;
+		
+		
+		
 		//children = new LinkedList<UserProcess>();
 		children = new Hashtable<Integer, UserProcess>();
+		
 		for (int i=0; i<numPhysPages; i++) 
 			pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
 
 
-		state = 1;
+		// state = 1;
 		
 		// supports up to 16 files;
 		openFile = new OpenFile[16];
 
+		// stdin and stdout;
 		openFile[0] = UserKernel.console.openForReading();
 		openFile[1] = UserKernel.console.openForWriting();
+		
+		
+		
 		UserKernel.processList.add(this);
 		//this.threads = new LinkedList<UThread>();
 		
@@ -983,9 +992,8 @@ public class UserProcess {
 		int fileDescriptor = -1;
 
 		// support 16 files max;
-		for (int i = 0; i < 16; i++) 
-		{
-			if(openFile[i] == null) {
+		for (int i = 0; i < 16; i++) {
+			if (openFile[i] == null) {
 				fileDescriptor = i;
 				return fileDescriptor;
 			}
@@ -995,23 +1003,17 @@ public class UserProcess {
 
 	private int handleCreat(int address) {
 
-		// invalid address;
-		if (address < 0) {
-			return -1;
-		}
-
 		// read file name;
 		String file = readVirtualMemoryString(address, 256);
 
 		// if file does not exist, create failed;
-		if (file == null) 
-		{
+		if (file == null) {
 			return -1;
 		}
 
 		// Search for empty space; 
 		int fileDescriptor = searchSpace();
-
+		
 		/* if searchSpace returns -1, meaning it reached
 		   16 max opening file. */
 		if (fileDescriptor == -1) {
@@ -1020,33 +1022,19 @@ public class UserProcess {
 
 		// create;
 		else {	
-			OpenFile f =ThreadedKernel.fileSystem.open(file, true);
-
-			if (f == null) {
-				return -1;
+			// create: if file does not exist;
+			openFile[fileDescriptor] = ThreadedKernel.fileSystem.open(file, true);
 			}
-
-			else {
-				openFile[fileDescriptor] = f;
-				return fileDescriptor;
-			}
-
-			// openFile [fileDescriptor] = ThreadedKernel.fileSystem.open(file, true);	
-		}
-
-		// return fileDescriptor;
-		// return fileDescriptor;
-
+		
+		return fileDescriptor;
+		
 	}
 
 
 	private int handleOpen(int address) {
 
-		// invalid address check;
-		if (address < 0) {
-			return -1;
-		}
-
+		// handles open() by opening a file;
+		
 		String file = readVirtualMemoryString(address, 256);
 
 		// cannot open file does not exist. 
@@ -1062,103 +1050,76 @@ public class UserProcess {
 		if (fileDescriptor == -1) {
 			return -1; 
 		}
-
+		
 		else {
-			// the value of create should be false since we are only handling open right here;
-
-			OpenFile f = ThreadedKernel.fileSystem.open(file, false);
-
-			if(f == null) {
-				return -1;
-			}
-
-			else {
-
-				//openFile[fileDescriptor] = ThreadedKernel.fileSystem.open(file, false);
-				openFile[fileDescriptor] = f;
-				return fileDescriptor;
-			}
-		}		
+			
+			openFile[fileDescriptor] = ThreadedKernel.fileSystem.open(file, false);
+			return fileDescriptor;	// open successfully and return the fileDescriptor;
+		}
+	
 	}
 
-	private int handleRead(int fileDescriptor, int addr, int l) {
-		if (fileDescriptor > 15 || fileDescriptor < 0) {
+	private int handleRead(int fileDescriptor, int bufferAddr, int length) {
+		// handle read();
+		
+		if (openFile[fileDescriptor] == null || fileDescriptor > 15 || fileDescriptor < 0) {
+			// return error;
 			return -1;
 		}
 
-		else if(openFile[fileDescriptor] == null) {
-			return -1;
-		}
+		byte temp[] = new byte[length];
 
-		byte buffer[] = new byte[l];
-
-		int readNum = openFile[fileDescriptor].read(buffer, 0, l);
-
+		// for reading file;
+		int read = openFile[fileDescriptor].read(temp, 0, length);
+		
 		// couldn't read data;
-		if(readNum <= 0) {
+		if(read <= 0) {
 			return 0;
 		}
 
-		int writeNum = writeVirtualMemory(addr, buffer);
-		return writeNum;
+		int write = writeVirtualMemory(bufferAddr, temp);
+		return write;
 	}	
 
-	private int handleWrite(int fileDescriptor, int addr, int l) {
+	private int handleWrite(int fileDescriptor, int bufferAddr, int length) {
 		// write data from virtual memory address into the file;
 
 		// should not be greater than 15 or less than 0;
-		if (fileDescriptor > 15 || fileDescriptor < 0) {
+		if (openFile[fileDescriptor] == null || fileDescriptor > 15 || fileDescriptor < 0) {
 			return -1;
 		}
 
-		else if(openFile[fileDescriptor] == null) {
-			return -1;
-		}
-
-		byte buffer[] = new byte[l];
+		byte temp[] = new byte[length];
 
 		// store data into the temp buffer table;
-		int readNum = readVirtualMemory(addr, buffer);
+		int read = readVirtualMemory(bufferAddr, temp);
 
-		if (readNum <= 0) {
+		if (read <= 0) {
 			// no data read;
 			return 0;
 		}
 
 		// now write the data in;
-		int writeNum = openFile[fileDescriptor].write(buffer, 0, l);
+		int write = openFile[fileDescriptor].write(temp, 0, length);
 
-		if (writeNum < l) {
-			// error occured when writing, return error;
+		if (write < length) {
+			// error occurred when writing, return error;
 			return -1;
 		}
 
 		// return written; 
-		return writeNum;
+		return write;
 	}
-
-
 
 	private int handleClose(int fileDescriptor) {
 
-		// add comments later;
-
 		// should not be greater than 15 or less than 0;
-		if (fileDescriptor > 15 || fileDescriptor < 0) {
+		if (openFile[fileDescriptor] == null || fileDescriptor > 15 || fileDescriptor < 0) {
 			return -1;
 		}
 
-		// or if the file does not exist, error;
-		else if (openFile[fileDescriptor] == null) {
-			return -1;
-		}
-
-		else {
-
-			openFile[fileDescriptor].close();
-			openFile[fileDescriptor] = null;
-
-		}
+		openFile[fileDescriptor].close();
+		openFile[fileDescriptor] = null;
 
 		return 0;
 	}
@@ -1166,11 +1127,6 @@ public class UserProcess {
 
 	private int handleUnlink(int address) {
 		// use for removing file;
-
-		// invalid virtual memory address;
-		if (address < 0) {
-			return -1;
-		}
 
 		// first get the name of the file;
 		String file = readVirtualMemoryString(address, 256);
