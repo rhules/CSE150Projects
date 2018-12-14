@@ -29,39 +29,15 @@ public class UserProcess {
 	 * Allocate a new process.
 	 */
 	public UserProcess() {
-//		int numPhysPages = Machine.processor().getNumPhysPages();
-//		
-//		pageTable = new TranslationEntry[numPhysPages];
-//		pID = UserKernel.gPID++;
-//		
-//		children = new LinkedList<UserProcess>();
-//		joinLock = new Lock();
-//		joinCond = new Condition(joinLock);
-//		
-//		for (int i=0; i<numPhysPages; i++) 
-//			pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
-//
-//
-//		// state = 1;
-//		
-//		// supports up to 16 files;
-//		openFile = new OpenFile[16];
-//
+
+		pID = processCounter++;
+		runningProcessCounter++;
+		
 		// stdin and stdout;
 		openFile[0] = UserKernel.console.openForReading();
 		openFile[1] = UserKernel.console.openForWriting();
-//		
-//		
-//		
-//		UserKernel.processList.add(this);
-		//this.threads = new LinkedList<UThread>();
-		
-		
 		
 	}
-
-	//Allocate a new process with a parent
-
 
 	/**
 	 * Allocate and return a new process of the correct class. The class name
@@ -86,9 +62,12 @@ public class UserProcess {
 		if (!load(name, args))
 			return false;
 
-		UThread temp = new UThread(this);
-		temp.setName(name).fork();
-		this.thread = temp;
+//		UThread temp = new UThread(this);
+//		temp.setName(name).fork();
+//		this.thread = temp;
+		
+		thread = new UThread(this);
+		thread.setName(name).fork();
 
 		return true;
 	}
@@ -222,63 +201,6 @@ public class UserProcess {
 
 	}
 	
-
-//	public int exec(int address) {
-//		String[] av = new String[argc];
-//		int off = 0;
-//		for(String s:av) {
-//			byte[] temp = s.getBytes();
-//			readVirtualMemory(argv, temp, off, argc);
-//			off += s.length()*4;
-//			s = temp.toString();
-//			
-//		}
-//		//int transferred = readVirtualMemory(argv, av.getBytes(), 0, argc);
-//		String file = readVirtualMemoryString(address, 256);
-//
-//		// cannot open file does not exist. 
-//		if(file == null||!file.endsWith(".coff")||!load(file, av)||argc < 0 || argv > numPages * pageSize) {
-//			return -1;
-//		}
-//
-//		String[] arg = new String[argc];
-//
-//		// store data into virtual memory;
-//		for (int i = 0; i < argc; i++) {
-//			byte[] argAddr = new byte[4];
-//
-//			// read virtual memory address;
-//			if (readVirtualMemory(argv + i * 4, argAddr) > 0) {
-//				// reading byte by byte;
-//				arg[i] = readVirtualMemoryString(Lib.bytesToInt(argAddr, 0), 256);
-//			}
-//		}
-//
-//		UserProcess temp = UserProcess.newUserProcess();
-//
-//		// fail opening the file;
-//		if (!temp.execute(file, arg)) {
-//			return -1;
-//		}
-//
-//		temp.manageParent(this.pID, true);
-//		this.children.put(temp.pID, temp);
-////		this.children.add(temp);
-//
-//		return temp.pID;
-//	}
-
-//	public boolean isChild(int ID) {
-//		Iterator<UserProcess> i = children.iterator();
-//		while(i.hasNext()) {
-//			if(i.next().pID == ID) {
-//				return true;
-//			}
-//		}
-//		return false;
-//	}
-
-
 
 	public UThread getThread() {
 		return thread;
