@@ -47,6 +47,12 @@ public class UserProcess {
 		return (UserProcess)Lib.constructObject(Machine.getProcessClassName());
 	}
 
+
+	public UThread getThread() {
+		return thread;
+	}
+	
+	
 	/**
 	 * Execute the specified program with the specified arguments. Attempts to
 	 * load the program, and then forks a thread to run it.
@@ -654,8 +660,9 @@ public class UserProcess {
 		processCounter--;
 
 		return 0;
-
 	}
+	
+	
 
 	private int handleJoin(int pID, int statAddr) {
 		UserProcess process = null;
@@ -667,34 +674,33 @@ public class UserProcess {
 				process = children.get(i);
 				break;
 			}
-
-			if (process == null || process.thread == null) {
-				return -1;
-			}
-			
-			// now acquire lock and sleep;
-			process.joinLock.acquire();
-			process.joinCond.sleep();
-			process.joinLock.release();
-
-			byte[] childStats = new byte[4];
-			
-			// take child process out of its status;
-			childStats = Lib.bytesFromInt(process.status);
-
-			int numByte = writeVirtualMemory(statAddr, childStats);
-
-			// if the exit status is normal and numberBytes also normal;
-			if (process.exitStat && numByte == 4) {
-				return 1;
-			}
-			
 		}
-		
+
+		if (process == null || process.thread == null) {
+			return -1;
+		}
+
+		// now acquire lock and sleep;
+		process.joinLock.acquire();
+		process.joinCond.sleep();
+		process.joinLock.release();
+
+		byte[] childStats = new byte[4];
+
+		// take child process out of its status;
+		childStats = Lib.bytesFromInt(process.status);
+
+		int numByte = writeVirtualMemory(statAddr, childStats);
+
+		// if the exit status is normal and numberBytes also normal;
+		if (process.exitStat && numByte == 4) {
+			return 1;
+		}
+
+
 		return 0;
 
 	}
-
 
 	private int searchSpace() {
 		// should find the suitable space and return available space;
@@ -731,9 +737,8 @@ public class UserProcess {
 		else {	
 			// create: if file does not exist;
 			openFile[fileDescriptor] = ThreadedKernel.fileSystem.open(file, true);
+			return fileDescriptor;
 		}
-
-		return fileDescriptor;
 
 	}
 
