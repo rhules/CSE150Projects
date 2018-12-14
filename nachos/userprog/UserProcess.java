@@ -47,9 +47,9 @@ public class UserProcess {
 //		// supports up to 16 files;
 //		openFile = new OpenFile[16];
 //
-//		// stdin and stdout;
-//		openFile[0] = UserKernel.console.openForReading();
-//		openFile[1] = UserKernel.console.openForWriting();
+		// stdin and stdout;
+		openFile[0] = UserKernel.console.openForReading();
+		openFile[1] = UserKernel.console.openForWriting();
 //		
 //		
 //		
@@ -295,6 +295,7 @@ public class UserProcess {
 	 * 
 	 * exit() never returns.
 	 */
+
 
 	/**
 	 * Save the state of this process in preparation for a context switch.
