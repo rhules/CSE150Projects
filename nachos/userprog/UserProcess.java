@@ -5,11 +5,8 @@ import nachos.threads.*;
 import nachos.userprog.*;
 
 import java.io.EOFException;
-import java.util.Vector;
-import java.util.Arrays;
-import java.util.Hashtable;
+import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.Iterator;
 
 /**
  * Encapsulates the state of a user process that is not contained in its
@@ -71,6 +68,145 @@ public class UserProcess {
 
 		return true;
 	}
+	
+	/**
+	 * Load the executable with the specified name into this process, and
+	 * prepare to pass it the specified arguments. Opens the executable, reads
+	 * its header information, and copies sections and arguments into this
+	 * process's virtual memory.
+	 *
+	 * @param	name	the name of the file containing the executable.
+	 * @param	args	the arguments to pass to the executable.
+	 * @return	<tt>true</tt> if the executable was successfully loaded.
+	 */
+	private boolean load(String name, String[] args) {
+		Lib.debug(dbgProcess, "UserProcess.load(\"" + name + "\")");
+
+		OpenFile executable = ThreadedKernel.fileSystem.open(name, false);
+		if (executable == null) {
+			Lib.debug(dbgProcess, "\topen failed");
+			return false;
+		}
+
+		try {
+			coff = new Coff(executable);
+		}
+		catch (EOFException e) {
+			executable.close();
+			Lib.debug(dbgProcess, "\tcoff load failed");
+			return false;
+		}
+
+		// make sure the sections are contiguous and start at page 0
+		numPages = 0;
+		for (int s=0; s<coff.getNumSections(); s++) {
+			CoffSection section = coff.getSection(s);
+			if (section.getFirstVPN() != numPages) {
+				coff.close();
+				Lib.debug(dbgProcess, "\tfragmented executable");
+				return false;
+			}
+			numPages += section.getLength();
+		}
+
+		// make sure the argv array will fit in one page
+		byte[][] argv = new byte[args.length][];
+		int argsSize = 0;
+		for (int i=0; i<args.length; i++) {
+			argv[i] = args[i].getBytes();
+			// 4 bytes for argv[] pointer; then string plus one for null byte
+			argsSize += 4 + argv[i].length + 1;
+		}
+		if (argsSize > pageSize) {
+			coff.close();
+			Lib.debug(dbgProcess, "\targuments too long");
+			return false;
+		}
+
+		// program counter initially points at the program entry point
+		initialPC = coff.getEntryPoint();	
+
+		// next comes the stack; stack pointer initially points to top of it
+		numPages += stackPages;
+		initialSP = numPages*pageSize;
+
+		// and finally reserve 1 page for arguments
+		numPages++;
+
+		if (!loadSections())
+			return false;
+
+		// store arguments in last page
+		int entryOffset = (numPages-1)*pageSize;
+		int stringOffset = entryOffset + args.length*4;
+
+		this.argc = args.length;
+		this.argv = entryOffset;
+
+		for (int i=0; i<argv.length; i++) {
+			byte[] stringOffsetBytes = Lib.bytesFromInt(stringOffset);
+			Lib.assertTrue(writeVirtualMemory(entryOffset,stringOffsetBytes) == 4);
+			entryOffset += 4;
+			Lib.assertTrue(writeVirtualMemory(stringOffset, argv[i]) ==
+					argv[i].length);
+			stringOffset += argv[i].length;
+			Lib.assertTrue(writeVirtualMemory(stringOffset,new byte[] { 0 }) == 1);
+			stringOffset += 1;
+		}
+
+		return true;
+	}
+	
+
+	/**
+	 * Allocates memory for this process, and loads the COFF sections into
+	 * memory. If this returns successfully, the process will definitely be
+	 * run (this is the last step in process initialization that can fail).
+	 *
+	 * @return	<tt>true</tt> if the sections were successfully loaded.
+	 */
+	protected boolean loadSections() {
+
+		UserKernel.memoryLock.acquire();
+
+		if (numPages > UserKernel.memoryList.size()) {
+			coff.close();
+			Lib.debug(dbgProcess, "\tinsufficient physical memory");
+
+			UserKernel.memoryLock.release();
+
+			return false;
+		}
+
+		pageTable = new TranslationEntry[numPages];
+
+		for (int i = 0; i < numPages; i++) {
+			int pageNext = UserKernel.memoryList.remove();
+			pageTable[i] = new TranslationEntry(i, pageNext, true, false, false, false);
+		}
+
+		UserKernel.memoryLock.release();
+
+
+		// load sections
+		// modified; 
+		for (int s = 0; s < coff.getNumSections(); s++) {
+			CoffSection section = coff.getSection(s);
+
+			Lib.debug(dbgProcess, "\tinitializing " + section.getName()
+			+ " section (" + section.getLength() + " pages)");
+
+			for (int i = 0; i < section.getLength(); i++) {
+				int vpn = section.getFirstVPN() + i;
+
+				pageTable[vpn].readOnly = section.isReadOnly();
+
+				// for now, just assume virtual addresses=physical addresses
+				section.loadPage(i, pageTable[vpn].ppn);
+			}
+		}
+		return true;
+	}
 
 	/**
 	 * Execute the specified program with the specified arguments. Attempts to
@@ -81,11 +217,6 @@ public class UserProcess {
 	 * @param	argv	the arguments to pass to the executable.
 	 * @return	-1 on error, pID otherwise.
 	 */
-
-
-	public UThread getThread() {
-		return thread;
-	}
 
 	/**
 	 * Terminate the current process immediately. Any open file descriptors 
@@ -104,8 +235,7 @@ public class UserProcess {
 	 * Save the state of this process in preparation for a context switch.
 	 * Called by <tt>UThread.saveState()</tt>.
 	 */
-	public void saveState() {
-	}
+	public void saveState() {}
 
 	/**
 	 * Restore the state of this process after a context switch. Called by
@@ -129,21 +259,6 @@ public class UserProcess {
 	 * @return	the string read, or <tt>null</tt> if no null terminator was
 	 *		found.
 	 */
-	public String 
-	MemoryString(int vaddr, int maxLength) {
-		Lib.assertTrue(maxLength >= 0);
-
-		byte[] bytes = new byte[maxLength+1];
-
-		int bytesRead = readVirtualMemory(vaddr, bytes);
-
-		for (int length=0; length<bytesRead; length++) {
-			if (bytes[length] == 0)
-				return new String(bytes, 0, length);
-		}
-
-		return null;
-	}
 
 	public String readVirtualMemoryString(int vaddr, int maxLength) {
 		Lib.assertTrue(maxLength >= 0);
@@ -321,145 +436,7 @@ public class UserProcess {
 		return transByte;
 
 	}
-
-	/**
-	 * Load the executable with the specified name into this process, and
-	 * prepare to pass it the specified arguments. Opens the executable, reads
-	 * its header information, and copies sections and arguments into this
-	 * process's virtual memory.
-	 *
-	 * @param	name	the name of the file containing the executable.
-	 * @param	args	the arguments to pass to the executable.
-	 * @return	<tt>true</tt> if the executable was successfully loaded.
-	 */
-	private boolean load(String name, String[] args) {
-		Lib.debug(dbgProcess, "UserProcess.load(\"" + name + "\")");
-
-		OpenFile executable = ThreadedKernel.fileSystem.open(name, false);
-		if (executable == null) {
-			Lib.debug(dbgProcess, "\topen failed");
-			return false;
-		}
-
-		try {
-			coff = new Coff(executable);
-		}
-		catch (EOFException e) {
-			executable.close();
-			Lib.debug(dbgProcess, "\tcoff load failed");
-			return false;
-		}
-
-		// make sure the sections are contiguous and start at page 0
-		numPages = 0;
-		for (int s=0; s<coff.getNumSections(); s++) {
-			CoffSection section = coff.getSection(s);
-			if (section.getFirstVPN() != numPages) {
-				coff.close();
-				Lib.debug(dbgProcess, "\tfragmented executable");
-				return false;
-			}
-			numPages += section.getLength();
-		}
-
-		// make sure the argv array will fit in one page
-		byte[][] argv = new byte[args.length][];
-		int argsSize = 0;
-		for (int i=0; i<args.length; i++) {
-			argv[i] = args[i].getBytes();
-			// 4 bytes for argv[] pointer; then string plus one for null byte
-			argsSize += 4 + argv[i].length + 1;
-		}
-		if (argsSize > pageSize) {
-			coff.close();
-			Lib.debug(dbgProcess, "\targuments too long");
-			return false;
-		}
-
-		// program counter initially points at the program entry point
-		initialPC = coff.getEntryPoint();	
-
-		// next comes the stack; stack pointer initially points to top of it
-		numPages += stackPages;
-		initialSP = numPages*pageSize;
-
-		// and finally reserve 1 page for arguments
-		numPages++;
-
-		if (!loadSections())
-			return false;
-
-		// store arguments in last page
-		int entryOffset = (numPages-1)*pageSize;
-		int stringOffset = entryOffset + args.length*4;
-
-		this.argc = args.length;
-		this.argv = entryOffset;
-
-		for (int i=0; i<argv.length; i++) {
-			byte[] stringOffsetBytes = Lib.bytesFromInt(stringOffset);
-			Lib.assertTrue(writeVirtualMemory(entryOffset,stringOffsetBytes) == 4);
-			entryOffset += 4;
-			Lib.assertTrue(writeVirtualMemory(stringOffset, argv[i]) ==
-					argv[i].length);
-			stringOffset += argv[i].length;
-			Lib.assertTrue(writeVirtualMemory(stringOffset,new byte[] { 0 }) == 1);
-			stringOffset += 1;
-		}
-
-		return true;
-	}
-
-	/**
-	 * Allocates memory for this process, and loads the COFF sections into
-	 * memory. If this returns successfully, the process will definitely be
-	 * run (this is the last step in process initialization that can fail).
-	 *
-	 * @return	<tt>true</tt> if the sections were successfully loaded.
-	 */
-	protected boolean loadSections() {
-
-		UserKernel.memoryLock.acquire();
-
-		if (numPages > UserKernel.memoryList.size()) {
-			coff.close();
-			Lib.debug(dbgProcess, "\tinsufficient physical memory");
-
-			UserKernel.memoryLock.release();
-
-			return false;
-		}
-
-		pageTable = new TranslationEntry[numPages];
-
-		for (int i = 0; i < numPages; i++) {
-			int pageNext = UserKernel.memoryList.remove();
-			pageTable[i] = new TranslationEntry(i, pageNext, true, false, false, false);
-		}
-
-		UserKernel.memoryLock.release();
-
-
-		// load sections
-		// modified; 
-		for (int s = 0; s < coff.getNumSections(); s++) {
-			CoffSection section = coff.getSection(s);
-
-			Lib.debug(dbgProcess, "\tinitializing " + section.getName()
-			+ " section (" + section.getLength() + " pages)");
-
-			for (int i = 0; i < section.getLength(); i++) {
-				int vpn = section.getFirstVPN() + i;
-
-				pageTable[vpn].readOnly = section.isReadOnly();
-
-				// for now, just assume virtual addresses=physical addresses
-				section.loadPage(i, pageTable[vpn].ppn);
-			}
-		}
-		return true;
-	}
-
+	
 	/**
 	 * Release any resources allocated by <tt>loadSections()</tt>.
 	 */
@@ -475,6 +452,7 @@ public class UserProcess {
 		UserKernel.memoryLock.release();
 
 	}
+
 
 	/**
 	 * Initialize the processor's registers in preparation for running the
@@ -547,6 +525,15 @@ public class UserProcess {
 		case syscallCreate:
 			return handleCreat(a0);
 
+		case syscallExit:
+			return handleExit(a0);
+			
+		case syscallJoin:
+			return handleJoin(a0, a1);
+			
+		case syscallExec:
+			return handleExec(a0, a1, a2);
+			
 		case syscallOpen:
 			return handleOpen(a0);
 
@@ -561,15 +548,6 @@ public class UserProcess {
 
 		case syscallUnlink:
 			return handleUnlink(a0);
-
-		case syscallExec:
-			return handleExec(a0, a1, a2);
-
-		case syscallExit:
-			return handleExit(a0);
-
-		case syscallJoin:
-			return handleJoin(a0, a1);
 
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -616,28 +594,26 @@ public class UserProcess {
 			if (readVirtualMemory(argvAddr + i * 4, virAddr) > 0) {
 				args[i] = readVirtualMemoryString(Lib.bytesToInt(virAddr, 0), 256);
 			}
-
-			// child processes and add to new processes;
-			UserProcess process = UserProcess.newUserProcess();
-
-			// and execute;
-			if (!process.execute(file, args)) {
-				// fails to open the file;
-				return -1;
-			}
-
-			process.parent = this;
-
-			// add childrenProcess to list;
-			children.add(process);
-
-			return process.pID;
-
 		}
 
-		return 0;
+		// child processes and add to new processes;
+		UserProcess process = UserProcess.newUserProcess();
+
+		// and execute;
+		if (!process.execute(file, args)) {
+			// fails to open the file;
+			return -1;
+		}
+
+		process.parent = this;
+
+		// add childrenProcess to list;
+		children.add(process);
+
+		return process.pID;
 
 	}
+	
 
 	private int handleExit(int status) {
 		coff.close();
@@ -691,29 +667,30 @@ public class UserProcess {
 				process = children.get(i);
 				break;
 			}
+
+			if (process == null || process.thread == null) {
+				return -1;
+			}
+			
+			// now acquire lock and sleep;
+			process.joinLock.acquire();
+			process.joinCond.sleep();
+			process.joinLock.release();
+
+			byte[] childStats = new byte[4];
+			
+			// take child process out of its status;
+			childStats = Lib.bytesFromInt(process.status);
+
+			int numByte = writeVirtualMemory(statAddr, childStats);
+
+			// if the exit status is normal and numberBytes also normal;
+			if (process.exitStat && numByte == 4) {
+				return 1;
+			}
+			
 		}
-
-		if (process == null || process.thread == null) {
-			return -1;
-		}
-
-		// now acquire lock and sleep;
-		process.joinLock.acquire();
-		process.joinCond.sleep();
-		process.joinLock.release();
-
-		byte[] childStats = new byte[4];
-
-		// take child process out of its status;
-		childStats = Lib.bytesFromInt(process.status);
-
-		int numByte = writeVirtualMemory(statAddr, childStats);
-
-		// if the exit status is normal and numberBytes also normal;
-		if (process.exitStat && numByte == 4) {
-			return 1;
-		}
-
+		
 		return 0;
 
 	}
