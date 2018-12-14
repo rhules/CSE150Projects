@@ -600,6 +600,16 @@ public class UserProcess {
 	 * Release any resources allocated by <tt>loadSections()</tt>.
 	 */
 	protected void unloadSections() {
+		
+		UserKernel.memoryLock.acquire();
+		
+		for (int i = 0; i < numPages; i++) {
+			UserKernel.memoryList.add(pageTable[i].ppn);
+			pageTable[i] = null;
+		}
+	
+		UserKernel.memoryLock.release();
+		
 	}
 
 	/**
