@@ -587,18 +587,18 @@ public class UserProcess {
 	public int writeVirtualMemory(int vaddr, byte[] data, int offset, int length) {
 
 		Lib.assertTrue(offset >= 0 && length >= 0 && offset + length <= data.length);
-
+		Processor processor = Machine.processor();
 		byte[] memory = Machine.processor().getMemory();
-
+		
 		int bytes = 0;
-		int n = 1024;
-
-		while (offset < data.length && length > 0) {
-			int virPage = (vaddr + bytes) / n;
-			int addressOffset = (vaddr + bytes) % n;
+		//int n = 1024;
+		
+		//while (offset < data.length || length > bytes) {
+			int virPage = processor.pageFromAddress(vaddr);   
+			int addressOffset = processor.offsetFromAddress(vaddr);
 
 			if (virPage < 0 || virPage >= pageTable.length) {
-				break;
+				return 0;
 			}
 
 			TranslationEntry tran = pageTable[virPage];
@@ -608,28 +608,29 @@ public class UserProcess {
 
 			// insetad check if it's read only;
 			if (!tran.valid || tran.readOnly)
-				break;
+				return 0;
 
 			tran.used = true;
 			tran.dirty = true;
 
 			int phyPage = tran.ppn;
-			int phyAddr = (phyPage * n) + addressOffset;
-
+			int phyAddr = (phyPage * pageSize) + addressOffset;
+			if((ppn < 0 || ppn >= processor.getNumPhysPages())
+			   return 0;
 			// remaining amount smallest from remaining;
-			int amount = Math.min(data.length - offset, Math.min(length, n - addressOffset));
+			int amount = Math.min(length, memory.length-vaddr));
 
-			System.arraycopy(data, offset, memory, phyAddr, amount);
+			System.arraycopy(data, offset, memory, vaddr, amount);
 
-			vaddr = vaddr + amount;
-			offset = offset + amount;
-			length -= amount;
+			//vaddr = vaddr + amount;
+			//offset = offset + amount;
+			//length -= amount;
 
-			bytes = bytes + amount;
+			//bytes = bytes + amount;
 
-		}
+		//}
 
-		return length;
+			return amount;
 
 // 		return transferredCounter;
 // 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
