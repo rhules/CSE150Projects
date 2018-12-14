@@ -697,7 +697,6 @@ public class UserProcess {
 			return 1;
 		}
 
-
 		return 0;
 
 	}

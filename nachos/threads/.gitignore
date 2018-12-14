@@ -29,3 +29,5 @@
 /wakeAlarmThread.class
 /LotteryScheduler$LotteryQueue.class
 /LotteryScheduler$LotteryThreadState.class
+/ThreadState.class
+/LotteryScheduler$ThreadState.class
