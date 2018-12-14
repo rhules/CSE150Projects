@@ -15,84 +15,20 @@ public class UserKernel extends ThreadedKernel {
 	 * Allocate a new user kernel.
 	 */
 	
-	
-	static { pageStart(); }
-	
-	public static void pageStart() 
-	{
-		
-		pages = new LinkedList <Integer> ();
-		used = new ArrayList <Boolean> ();
-		
-		for (int i = 0; i < Machine.processor().getNumPhysPages(); i++) {
-			pages.add(i);
-			used.add(false);
-		}
-		
-	}
-	
-	public static void removePage(int p) {
-		boolean status = Machine.interrupt().disable();
-		
-		if (used.get(p)) {
-			used.set(p, false);
-			
-			pages.push(p);
-		}
-		
-		Machine.interrupt().restore(status);
-	}
-	
-	
-	
-	public static int addPage() {
-		boolean status = Machine.interrupt().disable();
-		
-		// invalid if
-		if (pages.size() < 1) {
-			
-			Machine.interrupt().restore(status);
-			return -1;
-			
-		}
-		
-		else {
-			
-			int p = pages.pop();
-			
-			if (!used.get(p)) {
-				used.set(p, true);
-				Machine.interrupt().restore(status);
-				return p;
-			}
-			
-			else {
-				Machine.interrupt().restore(status);
-				return -1;
-				
-			}
-
-		}		
-		
-	}
-	
-	
 	public UserKernel() {
 
 		super();
-		processList = new LinkedList<UserProcess>();
+//		processList = new LinkedList<UserProcess>();
 		
-		//memoryLock = new Lock();
-		//memoryList = new LinkedList<Integer>();
-		
-		//for (int i = 0; i < 1024; i++) {
-		//	memoryList.add(i);
-		//}
-		
-
-		
-		
-		
+//		// 1213 update;
+//		// lock and linked list + initialize;
+//		memoryLock = new Lock();
+//		memoryList = new LinkedList<Integer>();
+//		
+//
+//		for (int i = 0; i < Machine.processor().getNumPhysPages(); i++) {
+//			memoryList.add(i);
+//		}
 		
 	}
 
@@ -108,6 +44,14 @@ public class UserKernel extends ThreadedKernel {
 		Machine.processor().setExceptionHandler(new Runnable() {
 			public void run() { exceptionHandler(); }
 		});
+		
+		memoryLock = new Lock();
+		memoryList = new LinkedList<Integer>();
+		
+		for (int i = 0; i < Machine.processor().getNumPhysPages(); i++) {
+			memoryList.add(i);
+		}
+
 	}
 
 	/**
@@ -188,17 +132,20 @@ public class UserKernel extends ThreadedKernel {
 		super.terminate();
 	}
 	
+	// 1213 update;
+	public static Lock memoryLock;
+	public static LinkedList<Integer> memoryList;
+	
+	
 	// Globally accessible process list
 	public static LinkedList <UserProcess> processList;
 	
-	// locks to protect;
-	//public static Lock memoryLock;
 	
 	// and to store free physical page number;
 	//public static LinkedList<Integer> memoryList;
 	
-	public static LinkedList <Integer> pages;
-	public static ArrayList <Boolean> used;
+//	public static LinkedList <Integer> pages;
+//	public static ArrayList <Boolean> used;
 
 	/** Globally accessible reference to the synchronized console. */
 	public static SynchConsole console;
