@@ -615,10 +615,10 @@ public class UserProcess {
 
 			int phyPage = tran.ppn;
 			int phyAddr = (phyPage * pageSize) + addressOffset;
-			if((ppn < 0 || ppn >= processor.getNumPhysPages())
+			if(tran.ppn < 0 || tran.ppn >= processor.getNumPhysPages())
 			   return 0;
 			// remaining amount smallest from remaining;
-			int amount = Math.min(length, memory.length-vaddr));
+			int amount = Math.min(length, memory.length-vaddr);
 
 			System.arraycopy(data, offset, memory, vaddr, amount);
 
